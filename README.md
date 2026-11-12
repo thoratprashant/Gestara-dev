@@ -36,6 +36,18 @@ ng build
 
 This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
 
+## GitHub Pages deployment
+
+The workflow in `.github/workflows/deploy-pages.yml` builds and deploys the application whenever a commit is pushed to `main`. It configures Angular for the repository URL at:
+
+```text
+https://thoratprashant.github.io/Gestara-dev/
+```
+
+Before the first deployment, open the repository on GitHub and select **Settings → Pages → Build and deployment → Source → GitHub Actions**. Then push this setup to `main`, or run the **Deploy Gestara to GitHub Pages** workflow manually from the repository's **Actions** tab.
+
+The deployment includes a `404.html` fallback so Angular routes such as `/Gestara-dev/patient/dashboard` work when opened or refreshed directly.
+
 ## Running unit tests
 
 To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
