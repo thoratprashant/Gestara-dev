@@ -24,50 +24,36 @@
         <label class="w-100 text-start text-uppercase fw-semibold" for="assign-problem-problem"
           >Problem</label
         >
-        <span class="assign-problem-dialog__select d-block w-100">
-          <select
-            class="d-block w-100 fw-normal"
-            id="assign-problem-problem"
-            formControlName="problem"
-          >
-            @for (problem of problemOptions; track problem) {
-              <option [value]="problem">{{ problem }}</option>
-            }
-          </select>
-          <img src="assets/problem-dialog/chevron-down.svg" alt="" aria-hidden="true" />
-        </span>
+        <app-suggestive-input
+          inputId="assign-problem-problem"
+          formControlName="problem"
+          placeholder="Type or select a problem..."
+          [options]="problemOptions"
+        />
       </div>
 
       <div class="assign-problem-dialog__field d-flex flex-column align-items-start w-100">
         <label class="w-100 text-start text-uppercase fw-semibold" for="assign-problem-category"
           >Category</label
         >
-        <span class="assign-problem-dialog__select d-block w-100">
-          <select
-            class="d-block w-100 fw-normal"
-            id="assign-problem-category"
-            formControlName="category"
-          >
-            @for (category of categoryOptions; track category) {
-              <option [value]="category">{{ category }}</option>
-            }
-          </select>
-          <img src="assets/problem-dialog/chevron-down.svg" alt="" aria-hidden="true" />
-        </span>
+        <app-suggestive-input
+          inputId="assign-problem-category"
+          formControlName="category"
+          placeholder="Type or select a category..."
+          [options]="categoryOptions"
+        />
       </div>
 
       <div class="assign-problem-dialog__field d-flex flex-column align-items-start w-100">
         <label class="w-100 text-start text-uppercase fw-semibold" for="assign-problem-task"
           >Task</label
         >
-        <span class="assign-problem-dialog__select d-block w-100">
-          <select class="d-block w-100 fw-normal" id="assign-problem-task" formControlName="task">
-            @for (task of taskOptions; track task) {
-              <option [value]="task">{{ task }}</option>
-            }
-          </select>
-          <img src="assets/problem-dialog/chevron-down.svg" alt="" aria-hidden="true" />
-        </span>
+        <app-suggestive-input
+          inputId="assign-problem-task"
+          formControlName="task"
+          placeholder="Type or select a task..."
+          [options]="taskOptions"
+        />
       </div>
     </mat-dialog-content>
 

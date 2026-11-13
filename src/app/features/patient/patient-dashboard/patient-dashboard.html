@@ -1382,11 +1382,50 @@
                   <div
                     [id]="'timeline-group-' + group.id"
                     class="problem-timeline__group-motion-inner"
+                    cdkDropList
+                    cdkDropListLockAxis="y"
+                    [cdkDropListData]="group.rows"
                     [attr.inert]="isTimelineGroupExpanded(group.id) ? null : ''"
+                    (cdkDropListDropped)="reorderTimelineRow(group.id, $event)"
                   >
-                    @for (row of group.rows; track row.id) {
-                      <div class="problem-timeline__row">
+                    @for (row of group.rows; track row.id; let rowIndex = $index) {
+                      <div
+                        class="problem-timeline__row"
+                        cdkDrag
+                        cdkDragLockAxis="y"
+                        [cdkDragData]="row"
+                        [attr.aria-label]="
+                          row.label + ', position ' + (rowIndex + 1) + ' of ' + group.rows.length
+                        "
+                        (cdkDragStarted)="hideTimelineStatusTooltip()"
+                      >
                         <div class="problem-timeline__label">
+                          <button
+                            class="problem-timeline__row-drag-handle"
+                            type="button"
+                            cdkDragHandle
+                            [disabled]="
+                              editingTimelineRow()?.groupId === group.id &&
+                              editingTimelineRow()?.rowId === row.id
+                            "
+                            [cdkDragHandleDisabled]="
+                              editingTimelineRow()?.groupId === group.id &&
+                              editingTimelineRow()?.rowId === row.id
+                            "
+                            [attr.aria-label]="
+                              'Reorder ' + row.label + '. Use up and down arrow keys.'
+                            "
+                            [attr.title]="'Drag to reorder ' + row.label"
+                            (keydown)="moveTimelineRowWithKeyboard($event, group.id, rowIndex)"
+                          >
+                            <img
+                              class="problem-timeline__row-drag-icon"
+                              src="assets/timeline-drag.svg"
+                              alt=""
+                              aria-hidden="true"
+                              draggable="false"
+                            />
+                          </button>
                           @if (
                             editingTimelineRow()?.groupId === group.id &&
                             editingTimelineRow()?.rowId === row.id

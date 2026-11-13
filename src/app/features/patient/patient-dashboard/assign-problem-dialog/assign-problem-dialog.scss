@@ -11,8 +11,7 @@
   flex-direction: column;
 }
 
-.assign-problem-dialog button,
-.assign-problem-dialog select {
+.assign-problem-dialog button {
   font-family: inherit;
 }
 
@@ -80,44 +79,8 @@
   letter-spacing: normal;
 }
 
-.assign-problem-dialog__select {
-  position: relative;
-}
-
-.assign-problem-dialog__select select {
-  height: 35px;
-  min-height: 0;
-  padding: 7.897px 31.59px 7.897px 10.53px;
-  color: #73808c;
-  appearance: none;
-  background: #fff;
-  border: 0.658px solid #e3ded9;
-  border-radius: 7.897px;
-  font-family: 'Plus Jakarta Sans', sans-serif;
-  font-size: 12px;
-  line-height: normal;
-  letter-spacing: normal;
-  cursor: pointer;
-}
-
-.assign-problem-dialog__select select:hover {
-  border-color: #c9c3bc;
-}
-
-.assign-problem-dialog__select select:focus {
-  border-color: #0d9488;
-  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.14);
-  outline: none;
-}
-
-.assign-problem-dialog__select img {
-  position: absolute;
-  top: 50%;
-  right: 10.53px;
-  width: 10.53px;
-  height: 10.53px;
-  pointer-events: none;
-  transform: translateY(-50%);
+.assign-problem-dialog__field app-suggestive-input {
+  width: 100%;
 }
 
 .assign-problem-dialog__footer {

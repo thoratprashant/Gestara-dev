@@ -63,6 +63,12 @@ export class SuggestiveInput implements ControlValueAccessor, OnDestroy {
           : 'none';
       this.updateDropdownPlacement(list);
     };
+
+    if (typeof ResizeObserver === 'undefined') {
+      queueMicrotask(measure);
+      return;
+    }
+
     this.listObserver = new ResizeObserver(measure);
     this.listObserver.observe(list);
     list

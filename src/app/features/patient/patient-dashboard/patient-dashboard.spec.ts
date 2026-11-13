@@ -88,6 +88,44 @@ describe('PatientDashboard timeline', () => {
     ).toEqual([originalGroupIds[1], originalGroupIds[0]]);
   });
 
+  it('reorders rows within a timeline group by drag and keyboard and keeps changes undoable', () => {
+    const dashboard = new PatientDashboard();
+    const group = dashboard.pregnancyTimeline().groups[0];
+    const originalRowIds = group.rows.map((row) => row.id);
+
+    dashboard.reorderTimelineRow(group.id, {
+      previousIndex: 0,
+      currentIndex: 2,
+    } as Parameters<PatientDashboard['reorderTimelineRow']>[1]);
+
+    expect(dashboard.pregnancyTimeline().groups[0].rows.map((row) => row.id)).toEqual([
+      originalRowIds[1],
+      originalRowIds[2],
+      originalRowIds[0],
+      ...originalRowIds.slice(3),
+    ]);
+    expect(dashboard.canUndoTimeline()).toBe(true);
+
+    dashboard.undoTimelineChange();
+    expect(dashboard.pregnancyTimeline().groups[0].rows.map((row) => row.id)).toEqual(
+      originalRowIds,
+    );
+
+    const keyboardEvent = {
+      key: 'ArrowDown',
+      preventDefault: vi.fn(),
+    } as unknown as KeyboardEvent;
+    dashboard.moveTimelineRowWithKeyboard(keyboardEvent, group.id, 0);
+
+    expect(keyboardEvent.preventDefault).toHaveBeenCalledOnce();
+    expect(
+      dashboard
+        .pregnancyTimeline()
+        .groups[0].rows.slice(0, 2)
+        .map((row) => row.id),
+    ).toEqual([originalRowIds[1], originalRowIds[0]]);
+  });
+
   it('opens the timeline dialog and flags duplicate categories within the selected problem', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dialog = TestBed.inject(MatDialog);
@@ -184,6 +222,9 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     const firstRow = fixture.nativeElement.querySelector('.problem-timeline__row') as HTMLElement;
+    const dragHandle = firstRow.querySelector(
+      '.problem-timeline__row-drag-handle',
+    ) as HTMLButtonElement;
     const editButton = firstRow.querySelector(
       '.problem-timeline__label-action--edit',
     ) as HTMLButtonElement;
@@ -191,6 +232,8 @@ describe('PatientDashboard timeline', () => {
       '.problem-timeline__label-action--add',
     ) as HTMLButtonElement;
 
+    expect(dragHandle).toBeTruthy();
+    expect(dragHandle.getAttribute('aria-label')).toContain('Use up and down arrow keys');
     expect(editButton).toBeTruthy();
     expect(addButton).toBeTruthy();
 
@@ -506,6 +549,29 @@ describe('PatientDashboard timeline', () => {
       category: 'Endocrine',
       task: 'Review lab results',
     });
+
+    const dialogElement = dialog.openDialogs[0].componentRef?.location.nativeElement as HTMLElement;
+    const suggestionInputs = dialogElement.querySelectorAll(
+      'app-suggestive-input input[role="combobox"]',
+    );
+    expect(suggestionInputs).toHaveLength(3);
+
+    const problemInput = suggestionInputs.item(0) as HTMLInputElement;
+    problemInput.value = 'vitamin';
+    problemInput.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+
+    const problemSuggestions = dialogElement.querySelectorAll(
+      '#assign-problem-problem-suggestions .suggestive-input__option',
+    );
+    expect(problemSuggestions).toHaveLength(1);
+    expect(problemSuggestions.item(0).textContent).toContain('Vitamin D deficiency');
+    expect(problemSuggestions.item(0).textContent).toContain('Nutritional deficiency');
+
+    (problemSuggestions.item(0) as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(dialogComponent.form.controls.problem.value).toBe('Vitamin D deficiency');
+    expect(dialogElement.querySelector('#assign-problem-problem-suggestions')).toBeNull();
 
     dialog.closeAll();
   });

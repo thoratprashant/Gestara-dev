@@ -2778,6 +2778,20 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.moveTimelineGroup(groupIndex, groupIndex + direction);
   }
 
+  reorderTimelineRow(groupId: string, event: CdkDragDrop<TimelineRow[]>): void {
+    this.moveTimelineRow(groupId, event.previousIndex, event.currentIndex);
+  }
+
+  moveTimelineRowWithKeyboard(event: KeyboardEvent, groupId: string, rowIndex: number): void {
+    if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') {
+      return;
+    }
+
+    event.preventDefault();
+    const direction = event.key === 'ArrowUp' ? -1 : 1;
+    this.moveTimelineRow(groupId, rowIndex, rowIndex + direction);
+  }
+
   openAddProblemDialog(): void {
     if (!this.dialog) {
       return;
@@ -2832,7 +2846,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       .open<AssignProblemDialog, AssignProblemDialogData, AssignProblemDialogResult>(
         AssignProblemDialog,
         {
-          autoFocus: 'select',
+          autoFocus: '.assign-problem-dialog__field input',
           data: { resultId, ...selection },
           maxWidth: 'calc(100vw - 1.5rem)',
           panelClass: 'assign-problem-dialog-panel',
@@ -3641,6 +3655,39 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
       return { ...timeline, groups: reorderedGroups };
     });
+  }
+
+  private moveTimelineRow(groupId: string, previousIndex: number, currentIndex: number): void {
+    const rows = this.pregnancyTimeline().groups.find((group) => group.id === groupId)?.rows;
+
+    if (!rows?.length) {
+      return;
+    }
+
+    const boundedCurrentIndex = this.clamp(currentIndex, 0, rows.length - 1);
+
+    if (
+      previousIndex < 0 ||
+      previousIndex >= rows.length ||
+      previousIndex === boundedCurrentIndex
+    ) {
+      return;
+    }
+
+    this.rememberTimeline();
+    this.hideTimelineStatusTooltip();
+    this.pregnancyTimeline.update((timeline) => ({
+      ...timeline,
+      groups: timeline.groups.map((group) => {
+        if (group.id !== groupId) {
+          return group;
+        }
+
+        const reorderedRows = [...group.rows];
+        moveItemInArray(reorderedRows, previousIndex, boundedCurrentIndex);
+        return { ...group, rows: reorderedRows };
+      }),
+    }));
   }
 
   private cloneTimeline(timeline: PregnancyTimeline): PregnancyTimeline {
