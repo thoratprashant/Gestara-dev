@@ -2,6 +2,8 @@ import { Component, inject } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
+import { SuggestiveOption } from '../../../../shared/components/suggestive-input/suggestive-input';
+
 export interface AssignProblemDialogData {
   category: string;
   problem: string;
@@ -20,9 +22,21 @@ export type AssignProblemDialogResult = AssignProblemDialogData;
 export class AssignProblemDialog {
   private readonly dialogData = inject<AssignProblemDialogData>(MAT_DIALOG_DATA);
 
-  readonly problemOptions = ['Thyroid function', 'Vitamin D deficiency', 'Iron deficiency anemia'];
-  readonly categoryOptions = ['Endocrine', 'Hematology', 'Maternal health'];
-  readonly taskOptions = ['Review lab results', 'Repeat laboratory test', 'Patient follow-up'];
+  readonly problemOptions: SuggestiveOption[] = [
+    { value: 'Thyroid function', label: 'Endocrine assessment' },
+    { value: 'Vitamin D deficiency', label: 'Nutritional deficiency' },
+    { value: 'Iron deficiency anemia', label: 'Hematologic condition' },
+  ];
+  readonly categoryOptions: SuggestiveOption[] = [
+    { value: 'Endocrine', label: 'Hormonal and metabolic disorders' },
+    { value: 'Hematology', label: 'Blood and related disorders' },
+    { value: 'Maternal health', label: 'Pregnancy and postpartum care' },
+  ];
+  readonly taskOptions: SuggestiveOption[] = [
+    { value: 'Review lab results', label: 'Review and document findings' },
+    { value: 'Repeat laboratory test', label: 'Schedule repeat testing' },
+    { value: 'Patient follow-up', label: 'Contact patient and review plan' },
+  ];
 
   readonly form = new FormGroup({
     problem: new FormControl(this.dialogData.problem, {
