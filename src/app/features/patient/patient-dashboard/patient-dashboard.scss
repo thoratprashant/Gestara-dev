@@ -91,10 +91,6 @@
   animation: patient-summary-sticky-in 240ms ease-out both;
 }
 
-.patient-summary--collapsed {
-  --patient-summary-block-padding: 0.75rem;
-}
-
 .patient-summary__header {
   display: flex;
   align-items: center;
@@ -190,13 +186,6 @@
   line-height: 1.2;
   text-transform: uppercase;
   cursor: pointer;
-}
-
-.patient-identity__history:hover,
-.patient-identity__history:focus-visible {
-  color: #007f78;
-  outline: 2px solid rgba(13, 148, 136, 0.18);
-  outline-offset: 2px;
 }
 
 .summary-facts {
@@ -298,7 +287,8 @@
     box-shadow 180ms ease;
 }
 
-.summary-fact--edd {
+.summary-fact--edd,
+.summary-fact--pregnancy-history {
   border: 0;
   font: inherit;
   text-align: left;
@@ -310,7 +300,9 @@
 }
 
 .summary-fact--edd:hover,
-.summary-fact--edd:focus-visible {
+.summary-fact--edd:focus-visible,
+.summary-fact--pregnancy-history:hover,
+.summary-fact--pregnancy-history:focus-visible {
   background: #dff2f0;
   box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.14);
   outline: none;
@@ -356,45 +348,6 @@
   font-weight: 600;
 }
 
-.patient-summary__risk {
-  margin-left: auto;
-  animation: patient-summary-controls-in 240ms ease-out both;
-}
-
-.summary-toggle {
-  display: grid;
-  place-items: center;
-  flex: 0 0 2rem;
-  width: 2rem;
-  height: 2rem;
-  margin-left: 0;
-  padding: 0;
-  color: #71818c;
-  background: transparent;
-  border: 0;
-  border-radius: 50%;
-}
-
-.summary-toggle:hover,
-.summary-toggle:focus-visible {
-  color: #008f89;
-  background: #eef8f7;
-  outline: none;
-}
-
-.summary-toggle__icon {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-right: 1.5px solid currentColor;
-  border-bottom: 1.5px solid currentColor;
-  transform: rotate(45deg) translate(-1px, -1px);
-  transition: transform 180ms ease;
-}
-
-.summary-toggle__icon--expanded {
-  transform: rotate(225deg) translate(-1px, -1px);
-}
-
 .patient-summary__details {
   display: grid;
   grid-template-columns: 1fr;
@@ -427,7 +380,7 @@
   min-height: 1.875rem;
 }
 
-.patient-summary:not(.patient-summary--collapsed) .patient-summary__recommendation {
+.patient-summary__recommendation {
   margin-top: var(--patient-summary-block-padding);
 }
 
@@ -2359,6 +2312,53 @@
   }
 }
 
+@media (max-width: 74.999rem) {
+  .patient-dashboard {
+    --patient-summary-sticky-height: 14rem;
+  }
+
+  .patient-summary__header {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .patient-identity,
+  .patient-summary__controls,
+  .summary-facts {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .patient-summary__controls {
+    margin-left: 0;
+  }
+
+  .summary-facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .summary-facts .summary-fact:first-child {
+    margin-left: 0;
+  }
+
+  .summary-facts .summary-fact {
+    width: 100%;
+    min-width: 0;
+    white-space: normal;
+  }
+
+  .summary-facts .summary-fact > span:last-child {
+    min-width: 0;
+  }
+
+  .summary-facts .summary-fact small,
+  .summary-facts .summary-fact strong {
+    overflow-wrap: anywhere;
+  }
+}
+
 @media (min-width: 48rem) and (max-width: 74.999rem) {
   .patient-dashboard {
     gap: 1.125rem;
@@ -2394,7 +2394,6 @@
     overflow-wrap: anywhere;
   }
 
-  .summary-toggle,
   .clinical-section__toggle {
     flex-basis: 2.5rem;
     width: 2.5rem;
@@ -2440,7 +2439,7 @@
 
 @media (max-width: 47.999rem) {
   .patient-dashboard {
-    --patient-summary-sticky-height: 9.875rem;
+    --patient-summary-sticky-height: 17rem;
   }
 
   .pregnancy-empty-state {
@@ -2508,29 +2507,20 @@
     width: 100%;
   }
 
-  .patient-summary__header {
-    flex-wrap: wrap;
-  }
-
-  .patient-identity {
-    flex: 1 1 auto;
-  }
-
-  .patient-summary__controls {
-    flex: 0 1 auto;
-  }
-
-  .patient-summary--collapsed .patient-summary__controls {
-    flex-basis: 100%;
-    width: 100%;
-  }
-
-  .patient-summary--collapsed .summary-facts {
-    flex: 1 1 auto;
+  .summary-facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 35.999rem) {
+  .patient-dashboard {
+    --patient-summary-sticky-height: 25rem;
+  }
+
+  .summary-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .clinical-section__header,
   .progress-note__toolbar {
     align-items: flex-start;
@@ -2604,7 +2594,6 @@
 @media (prefers-reduced-motion: reduce) {
   .patient-summary,
   .patient-summary__details-motion,
-  .summary-toggle__icon,
   .clinical-section__content-motion,
   .clinical-section__chevron,
   .clinical-section__toggle,
@@ -2613,8 +2602,7 @@
   }
 
   .patient-summary--sticky,
-  .summary-facts,
-  .patient-summary__risk {
+  .summary-facts {
     animation: none;
   }
 }

@@ -1040,13 +1040,14 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   @ViewChild('patientSummary')
   private patientSummary?: ElementRef<HTMLElement>;
 
+  @ViewChild('problemTimelineHeader')
+  private problemTimelineHeader?: ElementRef<HTMLElement>;
+
   @ViewChild('vitalSigns')
   private vitalSigns?: ElementRef<HTMLElement>;
 
-  private summaryManuallyCollapsed = false;
   private summaryResizeObserver?: ResizeObserver;
 
-  readonly summaryExpanded = signal(true);
   readonly summarySticky = signal(false);
   readonly visitSummaryExpanded = signal(true);
   readonly progressNoteExpanded = signal(true);
@@ -3192,29 +3193,6 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     return this.timelineHistory.length > 0;
   }
 
-  toggleSummary(): void {
-    if (this.summarySticky()) {
-      this.summaryManuallyCollapsed = false;
-
-      if (window.scrollY <= 1) {
-        this.summarySticky.set(false);
-        this.summaryExpanded.set(true);
-        return;
-      }
-
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-      return;
-    }
-
-    this.summaryExpanded.update((expanded) => {
-      this.summaryManuallyCollapsed = expanded;
-      return !expanded;
-    });
-  }
-
   @HostListener('window:scroll')
   onWindowScroll(): void {
     if (this.activeVitalTooltip()) {
@@ -3259,24 +3237,18 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       return;
     }
 
+    this.syncStickyElementHeights();
+
     const headerOffset = this.headerOffset();
     const summaryBounds = summary.getBoundingClientRect();
 
     if (!this.summarySticky() && window.scrollY > 8 && summaryBounds.top <= headerOffset) {
-      if (this.summaryExpanded()) {
-        this.summaryExpanded.set(false);
-      }
-
       this.summarySticky.set(true);
       return;
     }
 
     if (this.summarySticky() && window.scrollY <= 1) {
       this.summarySticky.set(false);
-
-      if (!this.summaryManuallyCollapsed) {
-        this.summaryExpanded.set(true);
-      }
     }
   }
 
@@ -3286,24 +3258,48 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   private observePatientSummaryHeight(): void {
     const summary = this.patientSummary?.nativeElement;
+    const timelineHeader = this.problemTimelineHeader?.nativeElement;
 
     if (!summary) {
       return;
     }
 
-    const syncHeight = (): void => {
-      const height = summary.getBoundingClientRect().height;
-
-      if (height > 0) {
-        summary.parentElement?.style.setProperty('--patient-summary-sticky-height', `${height}px`);
-      }
-    };
-
-    syncHeight();
+    this.syncStickyElementHeights();
 
     if (typeof ResizeObserver !== 'undefined') {
-      this.summaryResizeObserver = new ResizeObserver(syncHeight);
+      this.summaryResizeObserver = new ResizeObserver(() => this.syncStickyElementHeights());
       this.summaryResizeObserver.observe(summary);
+
+      if (timelineHeader) {
+        this.summaryResizeObserver.observe(timelineHeader);
+      }
+    }
+  }
+
+  private syncStickyElementHeights(): void {
+    const summary = this.patientSummary?.nativeElement;
+    const timelineHeader = this.problemTimelineHeader?.nativeElement;
+
+    if (summary) {
+      const summaryHeight = summary.getBoundingClientRect().height;
+
+      if (summaryHeight > 0) {
+        summary.parentElement?.style.setProperty(
+          '--patient-summary-sticky-height',
+          `${summaryHeight}px`,
+        );
+      }
+    }
+
+    if (timelineHeader) {
+      const timelineHeaderHeight = timelineHeader.getBoundingClientRect().height;
+
+      if (timelineHeaderHeight > 0) {
+        timelineHeader.parentElement?.style.setProperty(
+          '--problem-timeline-header-height',
+          `${timelineHeaderHeight}px`,
+        );
+      }
     }
   }
 

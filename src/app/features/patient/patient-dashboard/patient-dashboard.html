@@ -36,7 +36,6 @@
     <section
       #patientSummary
       class="patient-summary"
-      [class.patient-summary--collapsed]="!summaryExpanded()"
       [class.patient-summary--sticky]="summarySticky()"
       aria-labelledby="patient-name"
     >
@@ -44,37 +43,54 @@
         <div class="patient-identity">
           <h1 id="patient-name">Sarah Johnson</h1>
           <p>
-            <button
-              class="patient-identity__birth-date"
-              type="button"
-              aria-label="Birth date: Jun 8, 1989"
-              matTooltip="Birth date Jun 8, 1989"
-              matTooltipClass="birth-date-tooltip"
-              matTooltipPosition="below"
-            >
-              <span aria-hidden="true">i</span>
-            </button>
-            <span class="patient-identity__age">Age 32</span>
+            <span class="patient-identity__history">DOB: February 16, 1990</span>
             <span class="patient-identity__separator" aria-hidden="true">/</span>
-            <button
-              class="patient-identity__history"
-              type="button"
-              aria-describedby="pregnancy-history-tooltip"
-              [attr.aria-expanded]="pregnancyHistoryTooltipOpen()"
-              (mouseenter)="showPregnancyHistoryTooltip($event)"
-              (mouseleave)="schedulePregnancyHistoryTooltipHide()"
-              (focusin)="showPregnancyHistoryTooltip($event)"
-              (focusout)="schedulePregnancyHistoryTooltipHide()"
-              (click)="showPregnancyHistoryTooltip($event)"
-            >
-              G3 - P1011
-            </button>
+            <span class="patient-identity__history">MRN: 829653892</span>
           </p>
         </div>
 
         <div class="patient-summary__controls">
-          @if (!summaryExpanded()) {
-            <div class="summary-facts" aria-label="Patient summary">
+          <div class="summary-facts" aria-label="Patient summary">
+              <!-- Added as per client demo feedback point 1 -->
+              <article class="summary-fact">
+                <button
+                  class="patient-identity__birth-date"
+                  type="button"
+                  aria-label="Birth date: February 16, 1990"
+                  matTooltip="Birth date: February 16, 1990"
+                  matTooltipClass="birth-date-tooltip"
+                  matTooltipPosition="below"
+                >
+                  <span aria-hidden="true">i</span>
+                </button>
+                <span class="patient-identity__age">
+                  <strong>AGE 36</strong>
+                </span>
+              </article>
+              
+              <button
+                class="summary-fact summary-fact--pregnancy-history"
+                type="button"
+                aria-describedby="pregnancy-history-tooltip"
+                [attr.aria-expanded]="pregnancyHistoryTooltipOpen()"
+                (mouseenter)="showPregnancyHistoryTooltip($event)"
+                (mouseleave)="schedulePregnancyHistoryTooltipHide()"
+                (focusin)="showPregnancyHistoryTooltip($event)"
+                (focusout)="schedulePregnancyHistoryTooltipHide()"
+                (click)="showPregnancyHistoryTooltip($event)"
+              >
+                <img
+                  class="summary-fact__icon"
+                  src="assets/pregnancy-green.svg"
+                  alt=""
+                  aria-hidden="true"
+                />
+                <span>
+                  <small>Pregnancy Details</small>
+                  <strong>G3 P1011</strong>
+                </span>
+              </button>
+
               <!-- Added on 28-10-26 -->
               <article class="summary-fact">
                 <img
@@ -111,6 +127,7 @@
                   <strong>June 15, 2026</strong>
                 </span>
               </button>
+
               <button
                 class="summary-fact summary-fact--delivery"
                 type="button"
@@ -159,64 +176,15 @@
                   <strong>{{ preEclampsiaRiskSummary().label }}</strong>
                 </span>
               </button>
-            </div>
-          } @else {
-            <button
-              [class]="
-                'summary-fact summary-fact--risk summary-fact--risk-' +
-                preEclampsiaRiskStatus() +
-                ' patient-summary__risk'
-              "
-              type="button"
-              aria-haspopup="dialog"
-              [attr.aria-expanded]="riskAssessmentOpen()"
-              (mouseenter)="showRiskAssessment($event)"
-              (mouseleave)="scheduleRiskAssessmentHide()"
-              (focusin)="showRiskAssessment($event)"
-              (focusout)="scheduleRiskAssessmentHide()"
-              (click)="showRiskAssessment($event)"
-            >
-              <img
-                class="summary-fact__icon"
-                [src]="preEclampsiaRiskSummary().icon"
-                alt=""
-                aria-hidden="true"
-              />
-              <span>
-                <small>Pre-eclampsia Risk</small>
-                <strong>{{ preEclampsiaRiskSummary().label }}</strong>
-              </span>
-            </button>
-          }
-
-          <button
-            class="summary-toggle"
-            type="button"
-            [attr.aria-expanded]="summaryExpanded()"
-            aria-controls="patient-summary-details"
-            (click)="toggleSummary()"
-          >
-            <span class="visually-hidden">
-              {{ summaryExpanded() ? 'Collapse' : 'Expand' }} patient summary
-            </span>
-            <span
-              class="summary-toggle__icon"
-              [class.summary-toggle__icon--expanded]="summaryExpanded()"
-              aria-hidden="true"
-            ></span>
-          </button>
+          </div>
         </div>
       </header>
 
-      <div
-        class="patient-summary__details-motion"
-        [class.patient-summary__details-motion--open]="summaryExpanded()"
-        [attr.aria-hidden]="!summaryExpanded()"
+      <!-- Commented below section as per client demo feedback point 1 -->
+      <!-- <div
+        class="patient-summary__details-motion patient-summary__details-motion--open"
       >
-        <div
-          class="patient-summary__details-motion-inner"
-          [attr.inert]="summaryExpanded() ? null : ''"
-        >
+        <div class="patient-summary__details-motion-inner">
           <div id="patient-summary-details" class="patient-summary__details">
             <figure class="patient-summary__screening">
               <img
@@ -310,7 +278,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div> -->
 
       <!-- Commented below section as added a separate view for Recommended Problems -->
       <!-- <aside class="patient-summary__recommendation" aria-label="Clinical recommendations">
@@ -1197,7 +1165,7 @@
       class="problem-timeline"
       aria-labelledby="problem-timeline-title"
     >
-      <header class="problem-timeline__header">
+      <header #problemTimelineHeader class="problem-timeline__header">
         <h2 id="problem-timeline-title">Problem List &amp; Timeline</h2>
 
         <div class="problem-timeline__tools">

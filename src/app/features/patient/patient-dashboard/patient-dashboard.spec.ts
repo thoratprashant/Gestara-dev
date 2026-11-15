@@ -1201,7 +1201,6 @@ describe('PatientDashboard timeline', () => {
   it('shows the delivery chip tooltip from the recommended delivery summary fact', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
-    dashboard.summaryExpanded.set(false);
     fixture.detectChanges();
 
     const trigger = fixture.nativeElement.querySelector(
@@ -1225,29 +1224,32 @@ describe('PatientDashboard timeline', () => {
     expect(fixture.nativeElement.querySelector('#delivery-chip-tooltip')).toBeTruthy();
   });
 
-  it('shows the delivery chip tooltip from the expanded delivery metric', () => {
+  it('shows the pregnancy history tooltip from the summary fact', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
     fixture.detectChanges();
 
     const trigger = fixture.nativeElement.querySelector(
-      '.patient-metric--delivery',
+      '.summary-fact--pregnancy-history',
     ) as HTMLButtonElement;
     vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
-      bottom: 220,
-      height: 80,
-      left: 500,
+      bottom: 120,
+      height: 40,
+      left: 620,
       right: 760,
-      top: 140,
-      width: 260,
+      top: 80,
+      width: 140,
     } as DOMRect);
 
     trigger.dispatchEvent(new Event('mouseenter'));
     fixture.detectChanges();
 
-    expect(dashboard.deliveryChipTooltipOpen()).toBe(true);
-    expect(trigger.getAttribute('aria-describedby')).toBe('delivery-chip-tooltip');
-    expect(fixture.nativeElement.querySelector('#delivery-chip-tooltip')).toBeTruthy();
+    expect(trigger.querySelector('small')?.textContent?.trim()).toBe('Pregnancy Details');
+    expect(trigger.querySelector('strong')?.textContent?.trim()).toBe('G3 P1011');
+    expect(dashboard.pregnancyHistoryTooltipOpen()).toBe(true);
+    expect(trigger.getAttribute('aria-describedby')).toBe('pregnancy-history-tooltip');
+    expect(fixture.nativeElement.querySelector('#pregnancy-history-tooltip')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.summary-toggle')).toBeNull();
   });
 
   it('switches only late and future chips when they move across the current-week line', () => {
@@ -1888,19 +1890,47 @@ describe('PatientDashboard timeline', () => {
     dashboard.onWindowScroll();
 
     expect(dashboard.summarySticky()).toBe(false);
-    expect(dashboard.summaryExpanded()).toBe(true);
 
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 12 });
 
     dashboard.onWindowScroll();
 
     expect(dashboard.summarySticky()).toBe(true);
-    expect(dashboard.summaryExpanded()).toBe(false);
 
     Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
     dashboard.onWindowScroll();
 
     expect(dashboard.summarySticky()).toBe(false);
-    expect(dashboard.summaryExpanded()).toBe(true);
+  });
+
+  it('uses the rendered sticky section heights for the timeline offsets', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const dashboardElement = fixture.nativeElement.querySelector(
+      '.patient-dashboard',
+    ) as HTMLElement;
+    const summary = fixture.nativeElement.querySelector('.patient-summary') as HTMLElement;
+    const timeline = fixture.nativeElement.querySelector('.problem-timeline') as HTMLElement;
+    const timelineHeader = fixture.nativeElement.querySelector(
+      '.problem-timeline__header',
+    ) as HTMLElement;
+
+    vi.spyOn(summary, 'getBoundingClientRect').mockReturnValue({
+      height: 224,
+      top: 70,
+    } as DOMRect);
+    vi.spyOn(timelineHeader, 'getBoundingClientRect').mockReturnValue({
+      height: 72,
+    } as DOMRect);
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 12 });
+
+    dashboard.onWindowScroll();
+
+    expect(dashboardElement.style.getPropertyValue('--patient-summary-sticky-height')).toBe(
+      '224px',
+    );
+    expect(timeline.style.getPropertyValue('--problem-timeline-header-height')).toBe('72px');
   });
 });
