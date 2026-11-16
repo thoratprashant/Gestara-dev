@@ -105,15 +105,30 @@ interface TooltipGlassFocusRect {
   top: number;
 }
 
-interface EddTooltipRow {
-  label: string;
-  value: string;
+interface EddDatingSection {
+  icon: 'calendar' | 'ultrasound';
+  primaryRows: ReadonlyArray<{ label: string; value: string }>;
+  secondaryRow: { label: string; value: string };
+  title: string;
 }
 
+type PregnancyHistoryStatus = 'Abortion' | 'Current' | 'Preterm' | 'Term';
+
 interface PregnancyHistoryEntry {
+  complications: string;
   date: string;
-  details: readonly EddTooltipRow[];
-  title: string;
+  dateLabel: 'Delivery' | 'EDD' | 'Pregnancy Loss';
+  deliveryLocation: string;
+  gestationalAge: string;
+  living: string;
+  modeOfDelivery: string;
+  newborns: ReadonlyArray<{
+    birthWeight: string;
+    label?: string;
+    sex: string;
+  }>;
+  status: PregnancyHistoryStatus;
+  timelineStatus: 'completed' | 'future' | 'late' | 'ordered';
 }
 
 interface ResultTableRow {
@@ -1116,19 +1131,25 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     notchLeft: 210,
     placement: 'below',
     top: 0,
-    width: 420,
+    width: 380,
   });
   readonly eddTooltipMaxHeight = signal(560);
-  readonly eddCalculationRows: readonly EddTooltipRow[] = [
-    { label: 'Last Menstrual Period (LMP)', value: 'August 28, 2025' },
-    { label: 'EDD by LMP', value: 'June 4, 2026' },
-    { label: 'First Ultrasound', value: 'October 25, 2025' },
-    { label: 'Gestational Age', value: '8 weeks 4 days' },
-    { label: 'EDD by Ultrasound', value: 'June 15, 2026' },
-  ];
-  readonly eddFinalRows: readonly EddTooltipRow[] = [
-    { label: 'Final EDD', value: 'June 15, 2026' },
-    { label: 'Based on', value: 'first trimester ultrasound' },
+  readonly eddDatingSections: readonly EddDatingSection[] = [
+    {
+      title: 'Dating by LMP',
+      icon: 'calendar',
+      primaryRows: [{ label: 'Last Menstrual Period (LMP)', value: 'August 28, 2025' }],
+      secondaryRow: { label: 'EDD by LMP', value: 'June 4, 2026' },
+    },
+    {
+      title: 'Dating by Ultrasound',
+      icon: 'ultrasound',
+      primaryRows: [
+        { label: 'First Ultrasound', value: 'October 25, 2025' },
+        { label: 'Gestational Age', value: '8 weeks 4 days' },
+      ],
+      secondaryRow: { label: 'EDD by Ultrasound', value: 'June 15, 2026' },
+    },
   ];
   readonly pregnancyHistoryTooltipOpen = signal(false);
   readonly pregnancyHistoryTooltipPosition = signal<AnchoredTooltipPosition>({
@@ -1137,39 +1158,60 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     notchLeft: 230,
     placement: 'below',
     top: 0,
-    width: 460,
+    width: 1100,
   });
   readonly pregnancyHistoryTooltipMaxHeight = signal(620);
   readonly pregnancyHistoryEntries: readonly PregnancyHistoryEntry[] = [
     {
-      title: 'Pregnancy 1',
-      date: 'March 2020',
-      details: [
-        { label: 'GA at Delivery:', value: '39w 2d' },
-        { label: 'Mode:', value: 'Vaginal' },
-        { label: 'Complications:', value: 'None' },
-      ],
+      date: 'Mar 14, 2020',
+      dateLabel: 'Delivery',
+      status: 'Term',
+      timelineStatus: 'completed',
+      gestationalAge: '39w 2d',
+      modeOfDelivery: 'Vaginal',
+      newborns: [{ birthWeight: '7 lb 10 oz (3,459 g)', sex: 'Male' }],
+      deliveryLocation: 'Carle Foundation Hospital',
+      complications: 'None',
+      living: 'Yes',
     },
     {
-      title: 'Pregnancy 2',
-      date: 'June 2022',
-      details: [
-        { label: 'GA at Delivery:', value: '8w 0d' },
-        { label: 'Mode:', value: 'Spontaneous abortion' },
-        { label: 'Complications:', value: 'None' },
-      ],
+      date: 'Jun 6, 2022',
+      dateLabel: 'Pregnancy Loss',
+      status: 'Abortion',
+      timelineStatus: 'late',
+      gestationalAge: '8w 0d',
+      modeOfDelivery: 'Spontaneous abortion',
+      newborns: [{ birthWeight: '—', sex: '—' }],
+      deliveryLocation: '—',
+      complications: 'None',
+      living: 'No',
     },
     {
-      title: 'Pregnancy 3',
-      date: 'Current',
-      details: [
-        { label: 'GA at Delivery:', value: '28w 4d' },
-        { label: 'Mode:', value: 'In progress' },
-        {
-          label: 'Complications:',
-          value: 'Gestational Diabetes Mellitus, Gestational Hypertension',
-        },
+      date: 'Apr 22, 2024',
+      dateLabel: 'Delivery',
+      status: 'Preterm',
+      timelineStatus: 'ordered',
+      gestationalAge: '34w 1d',
+      modeOfDelivery: 'Cesarean',
+      newborns: [
+        { label: 'Twin A', birthWeight: '5 lb 4 oz (2,381 g)', sex: 'Female' },
+        { label: 'Twin B', birthWeight: '4 lb 12 oz (2,155 g)', sex: 'Male' },
       ],
+      deliveryLocation: 'Ascension St. Vincent',
+      complications: 'Preterm labor, PPROM',
+      living: 'Yes',
+    },
+    {
+      date: 'Jun 15, 2026',
+      dateLabel: 'EDD',
+      status: 'Current',
+      timelineStatus: 'future',
+      gestationalAge: '28+4',
+      modeOfDelivery: 'In progress',
+      newborns: [{ birthWeight: '—', sex: '—' }],
+      deliveryLocation: '—',
+      complications: 'Gestational Diabetes Mellitus, Gestational Hypertension',
+      living: 'N/A',
     },
   ];
   readonly activeTimelineGroupTooltip = signal<TimelineGroup | null>(null);
@@ -1728,7 +1770,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }
 
     const triggerBounds = trigger.getBoundingClientRect();
-    const width = Math.min(420, Math.max(window.innerWidth - 24, 280));
+    const width = Math.min(380, Math.max(window.innerWidth - 24, 280));
     const maximumLeft = Math.max(12, window.innerWidth - width - 12);
     const preferredLeft = triggerBounds.right - width;
     const verticalPosition = this.viewportTooltipVerticalPosition(triggerBounds, 560);
@@ -1779,7 +1821,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }
 
     const triggerBounds = trigger.getBoundingClientRect();
-    const width = Math.min(460, Math.max(window.innerWidth - 24, 300));
+    const width = Math.min(1100, Math.max(window.innerWidth - 24, 300));
     const maximumLeft = Math.max(12, window.innerWidth - width - 12);
     const preferredLeft = triggerBounds.right - width;
     const verticalPosition = this.viewportTooltipVerticalPosition(triggerBounds, 620);

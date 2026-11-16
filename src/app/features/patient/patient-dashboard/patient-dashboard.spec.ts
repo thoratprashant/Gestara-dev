@@ -1249,7 +1249,51 @@ describe('PatientDashboard timeline', () => {
     expect(dashboard.pregnancyHistoryTooltipOpen()).toBe(true);
     expect(trigger.getAttribute('aria-describedby')).toBe('pregnancy-history-tooltip');
     expect(fixture.nativeElement.querySelector('#pregnancy-history-tooltip')).toBeTruthy();
+    expect(
+      fixture.nativeElement.querySelectorAll('.pregnancy-history-tooltip__table tbody tr').length,
+    ).toBe(4);
+    expect(
+      Array.from(
+        fixture.nativeElement.querySelectorAll('.pregnancy-history-tooltip__status'),
+        (status: unknown) => (status as HTMLElement).getAttribute('data-status'),
+      ),
+    ).toEqual(['completed', 'late', 'ordered', 'future']);
+    expect(
+      Array.from(
+        fixture.nativeElement.querySelectorAll('.pregnancy-history-tooltip__date'),
+        (date: unknown) => (date as HTMLElement).getAttribute('data-status'),
+      ),
+    ).toEqual(['completed', 'late', 'ordered', 'future']);
     expect(fixture.nativeElement.querySelector('.summary-toggle')).toBeNull();
+  });
+
+  it('shows the final EDD and both dating methods in the EDD tooltip', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    const trigger = fixture.nativeElement.querySelector('.summary-fact--edd') as HTMLButtonElement;
+    vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
+      bottom: 120,
+      height: 40,
+      left: 620,
+      right: 760,
+      top: 80,
+      width: 140,
+    } as DOMRect);
+
+    trigger.dispatchEvent(new Event('mouseenter'));
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#edd-tooltip') as HTMLElement;
+    expect(dashboard.eddTooltipOpen()).toBe(true);
+    expect(tooltip.querySelector('.edd-tooltip__summary')?.textContent).toContain('Final EDD');
+    expect(tooltip.querySelector('.edd-tooltip__summary')?.textContent).toContain('June 15, 2026');
+    expect(
+      Array.from(tooltip.querySelectorAll('.edd-tooltip__dating-card h3'), (heading: unknown) =>
+        (heading as HTMLElement).textContent?.trim(),
+      ),
+    ).toEqual(['Dating by LMP', 'Dating by Ultrasound']);
   });
 
   it('switches only late and future chips when they move across the current-week line', () => {

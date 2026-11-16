@@ -1014,40 +1014,65 @@
         >
           <div class="edd-tooltip__surface">
             <div class="edd-tooltip__summary">
-              <div>
-                <span>Current Gestational Age</span>
-                <strong>28w 4d</strong>
-              </div>
-              <div>
-                <span>Estimated Due Date</span>
+              <span class="edd-tooltip__summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 40 40">
+                  <path d="M12 5v6M28 5v6M8 9h24a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V12a3 3 0 0 1 3-3Z" />
+                  <path d="M5 16h30" />
+                  <path d="m20 21 1.45 3.05 3.35.45-2.45 2.3.62 3.32L20 28.5l-2.97 1.62.62-3.32-2.45-2.3 3.35-.45L20 21Z" />
+                </svg>
+              </span>
+              <i aria-hidden="true"></i>
+              <div class="edd-tooltip__summary-content">
+                <h3>Final EDD</h3>
                 <strong>June 15, 2026</strong>
+                <p>
+                  <span>Based on</span>
+                  8 week ultrasound not consistent with LMP
+                </p>
               </div>
             </div>
 
             <div class="edd-tooltip__body">
-              <section aria-labelledby="edd-calculation-title">
-                <h3 id="edd-calculation-title">EDD Calculation</h3>
-                <dl class="edd-tooltip__list">
-                  @for (row of eddCalculationRows; track row.label) {
-                    <div>
-                      <dt>{{ row.label }}</dt>
-                      <dd>{{ row.value }}</dd>
-                    </div>
-                  }
-                </dl>
-              </section>
-
-              <section aria-labelledby="edd-final-title">
-                <h3 id="edd-final-title">Final EDD</h3>
-                <dl class="edd-tooltip__list edd-tooltip__list--final">
-                  @for (row of eddFinalRows; track row.label) {
-                    <div>
-                      <dt>{{ row.label }}</dt>
-                      <dd>{{ row.value }}</dd>
-                    </div>
-                  }
-                </dl>
-              </section>
+              @for (section of eddDatingSections; track section.title; let index = $index) {
+                <section
+                  class="edd-tooltip__dating-card"
+                  [attr.aria-labelledby]="'edd-dating-title-' + index"
+                >
+                  <header>
+                    <span class="edd-tooltip__dating-icon" aria-hidden="true">
+                      @if (section.icon === 'calendar') {
+                        <svg viewBox="0 0 32 32">
+                          <path d="M9 3v5M23 3v5M6 6h20a2.5 2.5 0 0 1 2.5 2.5v18A2.5 2.5 0 0 1 26 29H6a2.5 2.5 0 0 1-2.5-2.5v-18A2.5 2.5 0 0 1 6 6Z" />
+                          <path d="M3.5 12h25M9 17h3m4 0h3m4 0h.5M9 22h3m4 0h3" />
+                        </svg>
+                      } @else {
+                        <svg viewBox="0 0 40 32">
+                          <path d="M7.5 10.5 26 4.5a4 4 0 0 1 5 2.5l5 14.5a4 4 0 0 1-2.5 5L15 32.5a4 4 0 0 1-5-2.5L5 15.5a4 4 0 0 1 2.5-5Z" />
+                          <path d="M16 17.5c2.2-4.2 5.1-5.8 8-4.8 2.7.9 4 3.6 3.5 6.4-.4 2.2-2 4.1-4.2 4.8-3.5 1.1-7.2-1.2-7.3-4.9" />
+                          <path d="M11.5 12.5 9 7m21.5-1.5L33 1" />
+                        </svg>
+                      }
+                    </span>
+                    <h3 [id]="'edd-dating-title-' + index">{{ section.title }}</h3>
+                  </header>
+                  <div class="edd-tooltip__dating-content">
+                    <dl>
+                      @for (row of section.primaryRows; track row.label) {
+                        <div>
+                          <dt>{{ row.label }}</dt>
+                          <dd>{{ row.value }}</dd>
+                        </div>
+                      }
+                    </dl>
+                    <dl>
+                      <div>
+                        <dt>{{ section.secondaryRow.label }}</dt>
+                        <dd>{{ section.secondaryRow.value }}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </section>
+              }
             </div>
           </div>
         </aside>
@@ -1090,27 +1115,106 @@
                 class="pregnancy-history-tooltip__content"
                 aria-labelledby="pregnancy-history-title"
               >
-                <h4 id="pregnancy-history-title">Obstetrical History</h4>
-                <div class="pregnancy-history-tooltip__entries">
-                  @for (entry of pregnancyHistoryEntries; track entry.title) {
-                    <article class="pregnancy-history-tooltip__entry">
-                      <i aria-hidden="true"></i>
-                      <div>
-                        <header>
-                          <strong>{{ entry.title }}</strong>
-                          <span>{{ entry.date }}</span>
-                        </header>
-                        <dl>
-                          @for (detail of entry.details; track detail.label) {
-                            <div>
-                              <dt>{{ detail.label }}</dt>
-                              <dd>{{ detail.value }}</dd>
-                            </div>
-                          }
-                        </dl>
-                      </div>
-                    </article>
-                  }
+                <h4 id="pregnancy-history-title" class="visually-hidden">Pregnancy history</h4>
+                <div
+                  class="pregnancy-history-tooltip__table-scroll"
+                  role="region"
+                  aria-label="Pregnancy history table"
+                  tabindex="0"
+                >
+                  <table class="pregnancy-history-tooltip__table">
+                    <colgroup>
+                      <col class="pregnancy-history-tooltip__date-column" />
+                      <col class="pregnancy-history-tooltip__status-column" />
+                      <col class="pregnancy-history-tooltip__ga-column" />
+                      <col class="pregnancy-history-tooltip__mode-column" />
+                      <col class="pregnancy-history-tooltip__weight-column" />
+                      <col class="pregnancy-history-tooltip__sex-column" />
+                      <col class="pregnancy-history-tooltip__location-column" />
+                      <col class="pregnancy-history-tooltip__complications-column" />
+                      <col class="pregnancy-history-tooltip__living-column" />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th scope="col">Date of Delivery / EDD</th>
+                        <th scope="col">Status</th>
+                        <th scope="col">GA at Delivery</th>
+                        <th scope="col">Mode of Delivery</th>
+                        <th scope="col">Birth Weight</th>
+                        <th scope="col">Sex</th>
+                        <th scope="col">Delivery Location</th>
+                        <th scope="col">Complications</th>
+                        <th scope="col">Currently Living</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (entry of pregnancyHistoryEntries; track entry.date) {
+                        <tr>
+                          <th scope="row">
+                            <span
+                              class="pregnancy-history-tooltip__date"
+                              [attr.data-status]="entry.timelineStatus"
+                            >
+                              <svg viewBox="0 0 20 20" aria-hidden="true">
+                                <path
+                                  d="M5.5 2.5v3m9-3v3M3 7h14M4.5 4h11A1.5 1.5 0 0 1 17 5.5v11A1.5 1.5 0 0 1 15.5 18h-11A1.5 1.5 0 0 1 3 16.5v-11A1.5 1.5 0 0 1 4.5 4Z"
+                                />
+                                <path d="M6 10h2m2 0h2m2 0h.5M6 13.5h2m2 0h2" />
+                              </svg>
+                              <span>
+                                <strong>{{ entry.date }}</strong>
+                                <small>({{ entry.dateLabel }})</small>
+                              </span>
+                            </span>
+                          </th>
+                          <td>
+                            <span
+                              class="pregnancy-history-tooltip__status"
+                              [attr.data-status]="entry.timelineStatus"
+                            >
+                              {{ entry.status }}
+                            </span>
+                          </td>
+                          <td>
+                            @if (entry.status === 'Current') {
+                              <span class="pregnancy-history-tooltip__current-ga">
+                                <small>Current Gestational Age</small>
+                                <strong>{{ entry.gestationalAge }}</strong>
+                              </span>
+                            } @else {
+                              {{ entry.gestationalAge }}
+                            }
+                          </td>
+                          <td>{{ entry.modeOfDelivery }}</td>
+                          <td>
+                            <span class="pregnancy-history-tooltip__newborn-list">
+                              @for (
+                                newborn of entry.newborns;
+                                track newborn.label ?? newborn.birthWeight
+                              ) {
+                                <span>
+                                  @if (newborn.label) {
+                                    <small>{{ newborn.label }}</small>
+                                  }
+                                  {{ newborn.birthWeight }}
+                                </span>
+                              }
+                            </span>
+                          </td>
+                          <td>
+                            <span class="pregnancy-history-tooltip__newborn-list">
+                              @for (newborn of entry.newborns; track newborn.label ?? newborn.sex) {
+                                <span>{{ newborn.sex }}</span>
+                              }
+                            </span>
+                          </td>
+                          <td>{{ entry.deliveryLocation }}</td>
+                          <td>{{ entry.complications }}</td>
+                          <td>{{ entry.living }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
                 </div>
               </section>
             </div>
