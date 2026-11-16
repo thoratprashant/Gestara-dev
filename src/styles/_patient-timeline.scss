@@ -92,13 +92,13 @@
 }
 
 .problem-timeline [data-status='completed'] {
-  background: #C4FFFD;
-  color: #034E58;
+  background: #265B64;
+  color: #fff;
 }
 
 .problem-timeline [data-status='not-reviewed'] {
-  background: #DDF0EE;
-  color: #034E58;
+  background: #87B7B2;
+  color: #fff;
 }
 
 .problem-timeline [data-status='future'] {
