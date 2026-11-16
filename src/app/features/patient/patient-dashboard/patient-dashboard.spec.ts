@@ -1296,6 +1296,35 @@ describe('PatientDashboard timeline', () => {
     ).toEqual(['Dating by LMP', 'Dating by Ultrasound']);
   });
 
+  it('groups the visit order library by its related problem names', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const orderPicker = fixture.nativeElement.querySelector('.order-picker') as HTMLElement;
+    expect(
+      Array.from(orderPicker.querySelectorAll('.order-picker__category h4'), (heading: unknown) =>
+        (heading as HTMLElement).textContent?.trim(),
+      ),
+    ).toEqual([
+      'Routine Prenatal Care',
+      'Elevated Blood Pressure Without Diagnosis of Hypertension',
+      'Gestational Hypertension without Proteinuria',
+    ]);
+    expect(
+      Array.from(
+        orderPicker.querySelectorAll('.order-picker__category button'),
+        (button: unknown) => (button as HTMLElement).textContent?.trim(),
+      ),
+    ).toEqual([
+      '1hr GTT',
+      'CBC',
+      'HIV antigen/antibody',
+      'Syphilis antibody',
+      'Ambulatory blood pressure monitor',
+      'Ambulatory blood pressure monitor',
+    ]);
+  });
+
   it('switches only late and future chips when they move across the current-week line', () => {
     const dashboard = new PatientDashboard();
     const track = document.createElement('div');
