@@ -51,131 +51,131 @@
 
         <div class="patient-summary__controls">
           <div class="summary-facts" aria-label="Patient summary">
-              <!-- Added as per client demo feedback point 1 -->
-              <article class="summary-fact">
-                <button
-                  class="patient-identity__birth-date"
-                  type="button"
-                  aria-label="Birth date: February 16, 1990"
-                  matTooltip="Birth date: February 16, 1990"
-                  matTooltipClass="birth-date-tooltip"
-                  matTooltipPosition="below"
-                >
-                  <span aria-hidden="true">i</span>
-                </button>
-                <span class="patient-identity__age">
-                  <strong>AGE 36</strong>
-                </span>
-              </article>
-              
+            <!-- Added as per client demo feedback point 1 -->
+            <article class="summary-fact">
               <button
-                class="summary-fact summary-fact--pregnancy-history"
+                class="patient-identity__birth-date"
                 type="button"
-                aria-describedby="pregnancy-history-tooltip"
-                [attr.aria-expanded]="pregnancyHistoryTooltipOpen()"
-                (mouseenter)="showPregnancyHistoryTooltip($event)"
-                (mouseleave)="schedulePregnancyHistoryTooltipHide()"
-                (focusin)="showPregnancyHistoryTooltip($event)"
-                (focusout)="schedulePregnancyHistoryTooltipHide()"
-                (click)="showPregnancyHistoryTooltip($event)"
+                aria-label="Birth date: February 16, 1990"
+                matTooltip="Birth date: February 16, 1990"
+                matTooltipClass="birth-date-tooltip"
+                matTooltipPosition="below"
               >
-                <img
-                  class="summary-fact__icon"
-                  src="assets/pregnancy-green.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <span>
-                  <small>Pregnancy Details</small>
-                  <strong>G3 P1011</strong>
-                </span>
+                <span aria-hidden="true">i</span>
               </button>
+              <span class="patient-identity__age">
+                <strong>AGE 36</strong>
+              </span>
+            </article>
 
-              <!-- Added on 28-10-26 -->
-              <article class="summary-fact">
-                <img
-                  class="summary-fact__icon"
-                  src="assets/calender-green.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <span>
-                  <small>Current Gestational Age</small>
-                  <strong>28w 4d</strong>
-                </span>
-              </article>
+            <button
+              class="summary-fact summary-fact--pregnancy-history"
+              type="button"
+              aria-describedby="pregnancy-history-tooltip"
+              [attr.aria-expanded]="pregnancyHistoryTooltipOpen()"
+              (mouseenter)="showPregnancyHistoryTooltip($event)"
+              (mouseleave)="schedulePregnancyHistoryTooltipHide()"
+              (focusin)="showPregnancyHistoryTooltip($event)"
+              (focusout)="schedulePregnancyHistoryTooltipHide()"
+              (click)="showPregnancyHistoryTooltip($event)"
+            >
+              <img
+                class="summary-fact__icon"
+                src="assets/pregnancy-green.svg"
+                alt=""
+                aria-hidden="true"
+              />
+              <span>
+                <small>Pregnancy Details</small>
+                <strong>G3 P1011</strong>
+              </span>
+            </button>
 
-              <button
-                class="summary-fact summary-fact--edd"
-                type="button"
-                aria-describedby="edd-tooltip"
-                [attr.aria-expanded]="eddTooltipOpen()"
-                (mouseenter)="showEddTooltip($event)"
-                (mouseleave)="scheduleEddTooltipHide()"
-                (focusin)="showEddTooltip($event)"
-                (focusout)="scheduleEddTooltipHide()"
-                (click)="showEddTooltip($event)"
-              >
-                <img
-                  class="summary-fact__icon"
-                  src="assets/calender-green.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <span>
-                  <small>Estimated Due Date</small>
-                  <strong>June 15, 2026</strong>
-                </span>
-              </button>
+            <!-- Added on 28-10-26 -->
+            <article class="summary-fact">
+              <img
+                class="summary-fact__icon"
+                src="assets/calender-green.svg"
+                alt=""
+                aria-hidden="true"
+              />
+              <span>
+                <small>Current Gestational Age</small>
+                <strong>28w 4d</strong>
+              </span>
+            </article>
 
-              <button
-                class="summary-fact summary-fact--delivery"
-                type="button"
-                aria-haspopup="dialog"
-                [attr.aria-describedby]="deliveryChipTooltipOpen() ? 'delivery-chip-tooltip' : null"
-                [attr.aria-expanded]="deliveryChipTooltipOpen()"
-                (mouseenter)="showDeliveryChipTooltip($event)"
-                (mouseleave)="scheduleDeliveryChipTooltipHide()"
-                (focusin)="showDeliveryChipTooltip($event)"
-                (focusout)="scheduleDeliveryChipTooltipHide()"
-                (click)="showDeliveryChipTooltip($event)"
-              >
-                <img
-                  class="summary-fact__icon"
-                  src="assets/calender-green.svg"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <span>
-                  <small>Suggested Delivery Window</small>
-                  <strong>Week 36–39</strong>
-                </span>
-              </button>
-              <button
-                class="summary-fact summary-fact--risk"
-                [class]="
-                  'summary-fact summary-fact--risk summary-fact--risk-' + preEclampsiaRiskStatus()
-                "
-                type="button"
-                aria-haspopup="dialog"
-                [attr.aria-expanded]="riskAssessmentOpen()"
-                (mouseenter)="showRiskAssessment($event)"
-                (mouseleave)="scheduleRiskAssessmentHide()"
-                (focusin)="showRiskAssessment($event)"
-                (focusout)="scheduleRiskAssessmentHide()"
-                (click)="showRiskAssessment($event)"
-              >
-                <img
-                  class="summary-fact__icon"
-                  [src]="preEclampsiaRiskSummary().icon"
-                  alt=""
-                  aria-hidden="true"
-                />
-                <span>
-                  <small>Pre-eclampsia Risk</small>
-                  <strong>{{ preEclampsiaRiskSummary().label }}</strong>
-                </span>
-              </button>
+            <button
+              class="summary-fact summary-fact--edd"
+              type="button"
+              aria-describedby="edd-tooltip"
+              [attr.aria-expanded]="eddTooltipOpen()"
+              (mouseenter)="showEddTooltip($event)"
+              (mouseleave)="scheduleEddTooltipHide()"
+              (focusin)="showEddTooltip($event)"
+              (focusout)="scheduleEddTooltipHide()"
+              (click)="showEddTooltip($event)"
+            >
+              <img
+                class="summary-fact__icon"
+                src="assets/calender-green.svg"
+                alt=""
+                aria-hidden="true"
+              />
+              <span>
+                <small>Estimated Due Date</small>
+                <strong>June 15, 2026</strong>
+              </span>
+            </button>
+
+            <button
+              class="summary-fact summary-fact--delivery"
+              type="button"
+              aria-haspopup="dialog"
+              [attr.aria-describedby]="deliveryChipTooltipOpen() ? 'delivery-chip-tooltip' : null"
+              [attr.aria-expanded]="deliveryChipTooltipOpen()"
+              (mouseenter)="showDeliveryChipTooltip($event)"
+              (mouseleave)="scheduleDeliveryChipTooltipHide()"
+              (focusin)="showDeliveryChipTooltip($event)"
+              (focusout)="scheduleDeliveryChipTooltipHide()"
+              (click)="showDeliveryChipTooltip($event)"
+            >
+              <img
+                class="summary-fact__icon"
+                src="assets/calender-green.svg"
+                alt=""
+                aria-hidden="true"
+              />
+              <span>
+                <small>Suggested Delivery Window</small>
+                <strong>Week 36–39</strong>
+              </span>
+            </button>
+            <button
+              class="summary-fact summary-fact--risk"
+              [class]="
+                'summary-fact summary-fact--risk summary-fact--risk-' + preEclampsiaRiskStatus()
+              "
+              type="button"
+              aria-haspopup="dialog"
+              [attr.aria-expanded]="riskAssessmentOpen()"
+              (mouseenter)="showRiskAssessment($event)"
+              (mouseleave)="scheduleRiskAssessmentHide()"
+              (focusin)="showRiskAssessment($event)"
+              (focusout)="scheduleRiskAssessmentHide()"
+              (click)="showRiskAssessment($event)"
+            >
+              <img
+                class="summary-fact__icon"
+                [src]="preEclampsiaRiskSummary().icon"
+                alt=""
+                aria-hidden="true"
+              />
+              <span>
+                <small>Pre-eclampsia Risk</small>
+                <strong>{{ preEclampsiaRiskSummary().label }}</strong>
+              </span>
+            </button>
           </div>
         </div>
       </header>
@@ -1016,9 +1016,13 @@
             <div class="edd-tooltip__summary">
               <span class="edd-tooltip__summary-icon" aria-hidden="true">
                 <svg viewBox="0 0 40 40">
-                  <path d="M12 5v6M28 5v6M8 9h24a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V12a3 3 0 0 1 3-3Z" />
+                  <path
+                    d="M12 5v6M28 5v6M8 9h24a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V12a3 3 0 0 1 3-3Z"
+                  />
                   <path d="M5 16h30" />
-                  <path d="m20 21 1.45 3.05 3.35.45-2.45 2.3.62 3.32L20 28.5l-2.97 1.62.62-3.32-2.45-2.3 3.35-.45L20 21Z" />
+                  <path
+                    d="m20 21 1.45 3.05 3.35.45-2.45 2.3.62 3.32L20 28.5l-2.97 1.62.62-3.32-2.45-2.3 3.35-.45L20 21Z"
+                  />
                 </svg>
               </span>
               <i aria-hidden="true"></i>
@@ -1042,13 +1046,19 @@
                     <span class="edd-tooltip__dating-icon" aria-hidden="true">
                       @if (section.icon === 'calendar') {
                         <svg viewBox="0 0 32 32">
-                          <path d="M9 3v5M23 3v5M6 6h20a2.5 2.5 0 0 1 2.5 2.5v18A2.5 2.5 0 0 1 26 29H6a2.5 2.5 0 0 1-2.5-2.5v-18A2.5 2.5 0 0 1 6 6Z" />
+                          <path
+                            d="M9 3v5M23 3v5M6 6h20a2.5 2.5 0 0 1 2.5 2.5v18A2.5 2.5 0 0 1 26 29H6a2.5 2.5 0 0 1-2.5-2.5v-18A2.5 2.5 0 0 1 6 6Z"
+                          />
                           <path d="M3.5 12h25M9 17h3m4 0h3m4 0h.5M9 22h3m4 0h3" />
                         </svg>
                       } @else {
                         <svg viewBox="0 0 40 32">
-                          <path d="M7.5 10.5 26 4.5a4 4 0 0 1 5 2.5l5 14.5a4 4 0 0 1-2.5 5L15 32.5a4 4 0 0 1-5-2.5L5 15.5a4 4 0 0 1 2.5-5Z" />
-                          <path d="M16 17.5c2.2-4.2 5.1-5.8 8-4.8 2.7.9 4 3.6 3.5 6.4-.4 2.2-2 4.1-4.2 4.8-3.5 1.1-7.2-1.2-7.3-4.9" />
+                          <path
+                            d="M7.5 10.5 26 4.5a4 4 0 0 1 5 2.5l5 14.5a4 4 0 0 1-2.5 5L15 32.5a4 4 0 0 1-5-2.5L5 15.5a4 4 0 0 1 2.5-5Z"
+                          />
+                          <path
+                            d="M16 17.5c2.2-4.2 5.1-5.8 8-4.8 2.7.9 4 3.6 3.5 6.4-.4 2.2-2 4.1-4.2 4.8-3.5 1.1-7.2-1.2-7.3-4.9"
+                          />
                           <path d="M11.5 12.5 9 7m21.5-1.5L33 1" />
                         </svg>
                       }
@@ -1377,9 +1387,11 @@
             @for (group of pregnancyTimeline().groups; track group.id; let groupIndex = $index) {
               <article
                 class="problem-timeline__group"
+                [class.problem-timeline__group--resolved]="group.resolved"
                 cdkDrag
                 cdkDragLockAxis="y"
                 [cdkDragData]="group"
+                [cdkDragDisabled]="group.resolved"
                 [attr.aria-label]="
                   group.label +
                   ', position ' +
@@ -1394,6 +1406,8 @@
                     class="problem-timeline__group-drag-handle"
                     type="button"
                     cdkDragHandle
+                    [disabled]="group.resolved"
+                    [cdkDragHandleDisabled]="group.resolved"
                     [attr.aria-label]="'Reorder ' + group.label + '. Use up and down arrow keys.'"
                     [attr.title]="'Drag to reorder ' + group.label"
                     (keydown)="moveTimelineGroupWithKeyboard($event, groupIndex)"
@@ -1410,6 +1424,7 @@
                     class="problem-timeline__group-toggle"
                     type="button"
                     [attr.aria-expanded]="isTimelineGroupExpanded(group.id)"
+                    [attr.aria-label]="group.label + (group.resolved ? ', resolved' : '')"
                     [attr.aria-controls]="'timeline-group-' + group.id"
                     [attr.aria-describedby]="
                       activeTimelineGroupTooltip()?.id === group.id
@@ -2517,13 +2532,24 @@
         id="timeline-condition-tooltip"
         class="timeline-condition-tooltip"
         [class.timeline-condition-tooltip--remove]="timelineProblemPendingRemoval()"
-        [attr.role]="timelineProblemPendingRemoval() ? 'alertdialog' : 'dialog'"
+        [class.timeline-condition-tooltip--resolve-confirmation]="
+          timelineProblemPendingResolution()
+        "
+        [attr.role]="
+          timelineProblemPendingRemoval() || timelineProblemPendingResolution()
+            ? 'alertdialog'
+            : 'dialog'
+        "
         [attr.aria-label]="
           timelineProblemPendingRemoval()
             ? 'Remove ' + group.label + ' confirmation'
-            : group.label + ' condition details'
+            : timelineProblemPendingResolution()
+              ? 'Resolve ' + group.label + ' confirmation'
+              : group.label + ' condition details'
         "
-        [attr.aria-modal]="timelineProblemPendingRemoval() ? 'true' : null"
+        [attr.aria-modal]="
+          timelineProblemPendingRemoval() || timelineProblemPendingResolution() ? 'true' : null
+        "
         [style.left.px]="timelineGroupTooltipPosition().left"
         [style.top.px]="timelineGroupTooltipPosition().top"
         [style.width.px]="timelineGroupTooltipPosition().width"
@@ -2533,7 +2559,52 @@
         (focusin)="keepTimelineGroupTooltipOpen()"
         (focusout)="scheduleTimelineGroupTooltipHide()"
       >
-        @if (timelineProblemPendingRemoval()) {
+        @if (timelineProblemPendingResolution()) {
+          <header class="timeline-condition-tooltip__header">
+            <h2>Resolve Problem</h2>
+            <button
+              type="button"
+              [attr.aria-label]="'Close resolve ' + group.label + ' confirmation'"
+              (click)="cancelTimelineProblemResolution()"
+            >
+              <img src="assets/timeline-condition-tooltip/close.svg" alt="" aria-hidden="true" />
+            </button>
+          </header>
+
+          <div class="timeline-condition-tooltip__resolve-body">
+            <label class="timeline-condition-tooltip__notes-editor">
+              <span>Notes</span>
+              <textarea
+                rows="4"
+                maxlength="500"
+                placeholder="Add notes about resolving this problem"
+                [value]="timelineProblemResolutionNotes()"
+                (input)="updateTimelineProblemResolutionNotes($event)"
+              ></textarea>
+            </label>
+            <p class="timeline-condition-tooltip__notes-hint">
+              Mark <strong>“{{ group.label }}”</strong> as resolved? It will be moved to the bottom
+              and grayed out.
+            </p>
+          </div>
+
+          <footer class="timeline-condition-tooltip__footer">
+            <button
+              class="timeline-condition-tooltip__cancel"
+              type="button"
+              (click)="cancelTimelineProblemResolution()"
+            >
+              Cancel
+            </button>
+            <button
+              class="timeline-condition-tooltip__confirm-resolve"
+              type="button"
+              (click)="confirmTimelineProblemResolution(group.id)"
+            >
+              Resolve
+            </button>
+          </footer>
+        } @else if (timelineProblemPendingRemoval()) {
           <header class="timeline-condition-tooltip__header">
             <h2>Remove Problem?</h2>
             <button
@@ -2598,23 +2669,34 @@
               <h3>ICD - 10 Technical Description</h3>
               <p>{{ group.condition.description }}</p>
             </section>
+
+            @if (group.resolved) {
+              <section class="timeline-condition-tooltip__saved-notes">
+                <h3>Notes</h3>
+                <p>{{ group.resolutionNotes || 'No notes added.' }}</p>
+              </section>
+            }
           </div>
 
           <footer class="timeline-condition-tooltip__footer">
             <button
-              class="timeline-condition-tooltip__resolve"
+              class="timeline-condition-tooltip__delete"
               type="button"
               (click)="deleteTimelineProblem(group.id)"
             >
               Delete
             </button>
             <button
-              class="timeline-condition-tooltip__delete"
+              class="timeline-condition-tooltip__resolve"
+              [class.timeline-condition-tooltip__reactivate]="group.resolved"
               type="button"
-              [disabled]="group.resolved"
-              (click)="resolveTimelineProblem(group.id)"
+              (click)="
+                group.resolved
+                  ? reactivateTimelineProblem(group.id)
+                  : resolveTimelineProblem(group.id)
+              "
             >
-              {{ group.resolved ? 'Resolved' : 'Resolve' }}
+              {{ group.resolved ? 'Reactivate' : 'Resolve' }}
             </button>
           </footer>
         }
@@ -2850,7 +2932,6 @@
               </div>
 
               <section class="order-picker" aria-label="Order library">
-
                 <!-- Commented this Below section as per demo point no:8-->
                 <!-- <div class="order-picker__search">
                   <span class="search-icon" aria-hidden="true"></span>
@@ -2877,7 +2958,6 @@
                   <h4>Gestational Hypertension without Proteinuria</h4>
                   <button type="button"><i></i>Ambulatory blood pressure monitor</button>
                 </div>
-
               </section>
 
               <!-- Commented this Below section as per demo point no:8-->
@@ -3065,7 +3145,6 @@
                   </ul>
                 </article>
               </div> -->
-
             </section>
           </div>
         </div>

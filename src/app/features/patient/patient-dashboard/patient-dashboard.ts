@@ -19,6 +19,10 @@ import {
   AssignProblemDialogResult,
 } from './assign-problem-dialog/assign-problem-dialog';
 import {
+  DismissProblemDialog,
+  DismissProblemDialogResult,
+} from './dismiss-problem-dialog/dismiss-problem-dialog';
+import {
   TimelineItemDialog,
   TimelineItemDialogData,
   TimelineItemDialogResult,
@@ -283,7 +287,9 @@ interface TimelineGroup {
   condition: TimelineConditionDetails;
   id: string;
   label: string;
+  resolutionNotes?: string;
   resolved?: boolean;
+  resolvedFromIndex?: number;
   rows: TimelineRow[];
 }
 
@@ -302,6 +308,7 @@ interface SuggestedProblem {
   name: string;
   icdCode: string;
   detectionReason: string;
+  dismissalNotes?: string;
 }
 
 interface ActiveChipInteraction {
@@ -1216,6 +1223,8 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   ];
   readonly activeTimelineGroupTooltip = signal<TimelineGroup | null>(null);
   readonly timelineProblemPendingRemoval = signal<TimelineGroup | null>(null);
+  readonly timelineProblemPendingResolution = signal<TimelineGroup | null>(null);
+  readonly timelineProblemResolutionNotes = signal('');
   readonly timelineGroupTooltipPosition = signal<VitalTooltipPosition>({
     left: 0,
     top: 0,
@@ -1860,6 +1869,8 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   showTimelineGroupTooltip(group: TimelineGroup, event: Event): void {
     this.cancelTimelineGroupTooltipHide();
     this.timelineProblemPendingRemoval.set(null);
+    this.timelineProblemPendingResolution.set(null);
+    this.timelineProblemResolutionNotes.set('');
     this.hideVitalTooltip();
     this.hideResultTooltip();
     this.hideRiskAssessment();
@@ -1898,11 +1909,13 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   hideTimelineGroupTooltip(): void {
     this.cancelTimelineGroupTooltipHide();
     this.timelineProblemPendingRemoval.set(null);
+    this.timelineProblemPendingResolution.set(null);
+    this.timelineProblemResolutionNotes.set('');
     this.activeTimelineGroupTooltip.set(null);
   }
 
   scheduleTimelineGroupTooltipHide(): void {
-    if (this.timelineProblemPendingRemoval()) {
+    if (this.timelineProblemPendingRemoval() || this.timelineProblemPendingResolution()) {
       return;
     }
 
@@ -1915,6 +1928,17 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   keepTimelineGroupTooltipOpen(): void {
     this.cancelTimelineGroupTooltipHide();
+  }
+
+  private resizeTimelineGroupTooltipForConfirmation(preferredHeight: number): void {
+    const height = Math.min(preferredHeight, Math.max(window.innerHeight - 24, 180));
+    const position = this.timelineGroupTooltipPosition();
+
+    this.timelineGroupTooltipMaxHeight.set(height);
+    this.timelineGroupTooltipPosition.set({
+      ...position,
+      top: this.clamp(position.top, 12, Math.max(12, window.innerHeight - height - 12)),
+    });
   }
 
   timelineStatusTooltipNoteRows(note: string): number {
@@ -2489,13 +2513,86 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   resolveTimelineProblem(groupId: string): void {
+    const group = this.pregnancyTimeline().groups.find((item) => item.id === groupId);
+
+    if (!group || group.resolved) {
+      return;
+    }
+
+    this.cancelTimelineGroupTooltipHide();
+    this.timelineProblemResolutionNotes.set(group.resolutionNotes ?? '');
+    this.timelineProblemPendingResolution.set(group);
+    this.resizeTimelineGroupTooltipForConfirmation(340);
+  }
+
+  updateTimelineProblemResolutionNotes(event: Event): void {
+    this.timelineProblemResolutionNotes.set((event.target as HTMLTextAreaElement).value);
+  }
+
+  cancelTimelineProblemResolution(): void {
+    this.timelineProblemPendingResolution.set(null);
+    this.timelineProblemResolutionNotes.set('');
+    this.resizeTimelineGroupTooltipForConfirmation(266.006);
+  }
+
+  confirmTimelineProblemResolution(groupId: string): void {
     this.rememberTimeline();
-    this.pregnancyTimeline.update((timeline) => ({
-      ...timeline,
-      groups: timeline.groups.map((group) =>
-        group.id === groupId ? { ...group, resolved: true } : group,
-      ),
-    }));
+    this.pregnancyTimeline.update((timeline) => {
+      const resolvedFromIndex = timeline.groups.findIndex((group) => group.id === groupId);
+      const groupToResolve = timeline.groups[resolvedFromIndex];
+
+      if (!groupToResolve) {
+        return timeline;
+      }
+
+      const resolvedGroup: TimelineGroup = {
+        ...groupToResolve,
+        resolutionNotes: this.timelineProblemResolutionNotes().trim(),
+        resolved: true,
+        resolvedFromIndex,
+      };
+
+      return {
+        ...timeline,
+        groups: [...timeline.groups.filter((group) => group.id !== groupId), resolvedGroup],
+      };
+    });
+    this.hideTimelineGroupTooltip();
+  }
+
+  reactivateTimelineProblem(groupId: string): void {
+    const timeline = this.pregnancyTimeline();
+    const group = timeline.groups.find((item) => item.id === groupId);
+
+    if (!group?.resolved) {
+      return;
+    }
+
+    this.rememberTimeline();
+    this.pregnancyTimeline.update((currentTimeline) => {
+      const groupToReactivate = currentTimeline.groups.find((item) => item.id === groupId);
+
+      if (!groupToReactivate) {
+        return currentTimeline;
+      }
+
+      const { resolvedFromIndex, ...reactivatedGroup } = groupToReactivate;
+      const groupsWithoutReactivatedProblem = currentTimeline.groups.filter(
+        (item) => item.id !== groupId,
+      );
+      const restoredIndex = this.clamp(
+        resolvedFromIndex ?? groupsWithoutReactivatedProblem.length,
+        0,
+        groupsWithoutReactivatedProblem.length,
+      );
+
+      groupsWithoutReactivatedProblem.splice(restoredIndex, 0, {
+        ...reactivatedGroup,
+        resolved: false,
+      });
+
+      return { ...currentTimeline, groups: groupsWithoutReactivatedProblem };
+    });
     this.hideTimelineGroupTooltip();
   }
 
@@ -2780,11 +2877,34 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   declineSuggestedProblem(problem: SuggestedProblem): void {
-    this.suggestedProblems.update((problems) => problems.filter((item) => item.id !== problem.id));
-    this.declinedProblems.update((problems) => [
-      ...problems,
-      { ...problem, id: `declined-${problem.id}` },
-    ]);
+    if (!this.dialog) {
+      return;
+    }
+
+    const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    this.dialog
+      .open<DismissProblemDialog, void, DismissProblemDialogResult>(DismissProblemDialog, {
+        autoFocus: '#dismiss-problem-notes',
+        maxWidth: 'calc(100vw - 1.5rem)',
+        panelClass: 'timeline-item-dialog-panel',
+        restoreFocus: false,
+        width: '422px',
+      })
+      .afterClosed()
+      .subscribe((result) => {
+        if (result) {
+          this.suggestedProblems.update((problems) =>
+            problems.filter((item) => item.id !== problem.id),
+          );
+          this.declinedProblems.update((problems) => [
+            ...problems,
+            { ...problem, dismissalNotes: result.notes, id: `declined-${problem.id}` },
+          ]);
+        }
+
+        trigger?.focus({ preventScroll: true });
+      });
   }
 
   declineAllSuggestedProblems(): void {

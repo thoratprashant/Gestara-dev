@@ -92,38 +92,38 @@
 }
 
 .problem-timeline [data-status='completed'] {
-  background: #265B64;
+  background: #265b64;
   color: #fff;
 }
 
 .problem-timeline [data-status='not-reviewed'] {
-  background: #87B7B2;
+  background: #87b7b2;
   color: #fff;
 }
 
 .problem-timeline [data-status='future'] {
-  background: #E9E9E9;
-  color: #8E8E8E;
+  background: #e9e9e9;
+  color: #8e8e8e;
 }
 
 .problem-timeline [data-status='ordered'] {
-  background: #E0E8FF;
-  color: #2961FF;
+  background: #e0e8ff;
+  color: #2961ff;
 }
 
 .problem-timeline [data-status='due-soon'] {
-  background: #FFDAC6;
-  color: #FF5900;
+  background: #ffdac6;
+  color: #ff5900;
 }
 
 .problem-timeline [data-status='incomplete'] {
-  background: #FFF1DA;
-  color: #F59E0B;
+  background: #fff1da;
+  color: #f59e0b;
 }
 
 .problem-timeline [data-status='late'] {
-  background: #FDE2E2;
-  color: #AE3939;
+  background: #fde2e2;
+  color: #ae3939;
 }
 
 .problem-timeline [data-status='abnormal'] {
@@ -660,6 +660,25 @@
 
 .problem-timeline__group {
   background: #fff;
+}
+
+.problem-timeline__group--resolved .problem-timeline__group-header {
+  background: #f1f2f2;
+}
+
+.problem-timeline__group--resolved .problem-timeline__group-toggle {
+  color: #98a1aa;
+}
+
+.problem-timeline__group--resolved .problem-timeline__group-icon,
+.problem-timeline__group--resolved .problem-timeline__group-drag-icon,
+.problem-timeline__group--resolved .problem-timeline__group-add {
+  filter: grayscale(1);
+  opacity: 0.5;
+}
+
+.problem-timeline__group--resolved .problem-timeline__group-drag-handle {
+  cursor: default;
 }
 
 .problem-timeline__group-drag-handle {

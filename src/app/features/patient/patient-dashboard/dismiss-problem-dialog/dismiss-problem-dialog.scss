@@ -1,0 +1,149 @@
+:host {
+  display: block;
+  color: #171f26;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.dismiss-problem-dialog__header {
+  padding: 15.795px 21.059px;
+  border-bottom: 0.658px solid #e3ded9;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.dismiss-problem-dialog__header::before {
+  display: none;
+  content: none;
+}
+
+.dismiss-problem-dialog__header h2 {
+  color: #171f26;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 14px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.dismiss-problem-dialog__header button {
+  width: 21.059px;
+  height: 21.059px;
+  background: transparent;
+  border-radius: 5.265px;
+}
+
+.dismiss-problem-dialog__header button:hover,
+.dismiss-problem-dialog__header button:focus-visible {
+  background: #fafaf9;
+  outline: 2px solid rgba(13, 148, 136, 0.22);
+}
+
+.dismiss-problem-dialog__header img {
+  display: block;
+  width: 13.162px;
+  height: 13.162px;
+}
+
+.dismiss-problem-dialog__body {
+  max-height: min(70vh, 31rem);
+  padding: 21.059px;
+  color: #171f26;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.dismiss-problem-dialog__field {
+  gap: 5.265px;
+}
+
+.dismiss-problem-dialog__field label {
+  color: #73808c;
+  font-size: 10px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.dismiss-problem-dialog__field textarea {
+  box-sizing: border-box;
+  min-height: 76px;
+  padding: 10.53px;
+  color: #53616d;
+  background: #fafafa;
+  border: 0.658px solid #e3ded9;
+  border-radius: 7.897px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  line-height: 17px;
+  resize: vertical;
+}
+
+.dismiss-problem-dialog__field textarea:hover {
+  border-color: #c9c3bc;
+}
+
+.dismiss-problem-dialog__field textarea:focus {
+  background: #fff;
+  border-color: #0d9488;
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.14);
+  outline: none;
+}
+
+.dismiss-problem-dialog__help {
+  color: #a0a9b1;
+  font-size: 10px;
+  font-style: italic;
+  line-height: 14px;
+}
+
+.dismiss-problem-dialog__footer {
+  min-height: 0;
+  padding: 15.795px 21.059px;
+  background: #fafaf9;
+  border-top: 0.658px solid #e3ded9;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.dismiss-problem-dialog__footer button {
+  padding: 7.897px 13.162px;
+  border: 0.658px solid #e3ded9;
+  border-radius: 7.897px;
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 12px;
+  line-height: normal;
+  letter-spacing: normal;
+}
+
+.dismiss-problem-dialog__cancel {
+  color: #171f26;
+  background: transparent;
+}
+
+.dismiss-problem-dialog__footer .dismiss-problem-dialog__submit {
+  color: #fff;
+  background: #0d9488;
+  border-color: #0d9488;
+  box-shadow: 0 1.316px 1.316px rgba(0, 0, 0, 0.1);
+}
+
+.dismiss-problem-dialog__footer button:hover {
+  filter: brightness(0.97);
+}
+
+.dismiss-problem-dialog__footer button:focus-visible {
+  outline: 2px solid rgba(13, 148, 136, 0.3);
+  outline-offset: 2px;
+}
+
+@media (max-width: 30rem) {
+  .dismiss-problem-dialog__header,
+  .dismiss-problem-dialog__body,
+  .dismiss-problem-dialog__footer {
+    padding-inline: 1rem;
+  }
+}

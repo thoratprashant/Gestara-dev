@@ -1,0 +1,56 @@
+<section class="dismiss-problem-dialog w-100" aria-labelledby="dismiss-problem-dialog-title">
+  <header
+    class="dismiss-problem-dialog__header d-flex align-items-center justify-content-between m-0"
+    mat-dialog-title
+  >
+    <h2 id="dismiss-problem-dialog-title" class="m-0 text-start text-nowrap fw-bold">
+      Dismiss Problem
+    </h2>
+    <button
+      class="d-flex align-items-center justify-content-center p-0 border-0"
+      type="button"
+      mat-dialog-close
+      aria-label="Close dialog"
+    >
+      <img src="assets/timeline-dialog/close-task.svg" alt="" aria-hidden="true" />
+    </button>
+  </header>
+
+  <form class="w-100" [formGroup]="form" (ngSubmit)="submit()">
+    <mat-dialog-content class="dismiss-problem-dialog__body">
+      <div class="dismiss-problem-dialog__field d-flex flex-column align-items-start w-100">
+        <label class="w-100 text-start text-uppercase fw-semibold" for="dismiss-problem-notes">
+          Notes
+        </label>
+        <textarea
+          class="w-100 text-start fw-normal"
+          id="dismiss-problem-notes"
+          rows="4"
+          formControlName="notes"
+          aria-describedby="dismiss-problem-notes-help"
+        ></textarea>
+        <p id="dismiss-problem-notes-help" class="dismiss-problem-dialog__help m-0 text-start">
+          Add a note explaining why you are dismissing this problem.
+        </p>
+      </div>
+    </mat-dialog-content>
+
+    <mat-dialog-actions
+      class="dismiss-problem-dialog__footer d-flex align-items-center justify-content-between flex-nowrap m-0"
+    >
+      <button
+        class="dismiss-problem-dialog__cancel d-flex align-items-center justify-content-center text-center text-nowrap fw-semibold"
+        type="button"
+        mat-dialog-close
+      >
+        Cancel
+      </button>
+      <button
+        class="dismiss-problem-dialog__submit d-flex align-items-center justify-content-center text-center text-nowrap fw-semibold"
+        type="submit"
+      >
+        Dismiss Problem
+      </button>
+    </mat-dialog-actions>
+  </form>
+</section>

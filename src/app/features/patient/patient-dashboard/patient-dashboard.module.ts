@@ -10,6 +10,7 @@ import { SuggestiveInput } from '../../../shared/components/suggestive-input/sug
 import { PatientDashboard } from './patient-dashboard';
 import { AddProblemDialog } from './add-problem-dialog/add-problem-dialog';
 import { AssignProblemDialog } from './assign-problem-dialog/assign-problem-dialog';
+import { DismissProblemDialog } from './dismiss-problem-dialog/dismiss-problem-dialog';
 import { TimelineItemDialog } from './timeline-item-dialog/timeline-item-dialog';
 import { TimelineTaskDialog } from './timeline-task-dialog/timeline-task-dialog';
 
@@ -24,6 +25,7 @@ const routes: Routes = [
   declarations: [
     AddProblemDialog,
     AssignProblemDialog,
+    DismissProblemDialog,
     PatientDashboard,
     TimelineItemDialog,
     TimelineTaskDialog,

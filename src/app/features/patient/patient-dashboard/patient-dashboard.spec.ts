@@ -8,6 +8,7 @@ import { PatientDashboard } from './patient-dashboard';
 import { PatientDashboardModule } from './patient-dashboard.module';
 import { AddProblemDialog } from './add-problem-dialog/add-problem-dialog';
 import { AssignProblemDialog } from './assign-problem-dialog/assign-problem-dialog';
+import { DismissProblemDialog } from './dismiss-problem-dialog/dismiss-problem-dialog';
 import { TimelineItemDialog } from './timeline-item-dialog/timeline-item-dialog';
 import { TimelineTaskDialog } from './timeline-task-dialog/timeline-task-dialog';
 
@@ -195,6 +196,34 @@ describe('PatientDashboard timeline', () => {
       status: 'future',
     });
     expect(dashboard.canUndoTimeline()).toBe(true);
+  });
+
+  it('opens the dismiss problem dialog and saves its notes after confirmation', () => {
+    const dialog = {
+      open: vi.fn(() => ({
+        afterClosed: () => of({ notes: 'Blood pressure normalized after repeat testing.' }),
+      })),
+    } as unknown as MatDialog;
+    const dashboard = new PatientDashboard(dialog);
+    const problem = dashboard.suggestedProblems()[0];
+
+    dashboard.declineSuggestedProblem(problem);
+
+    expect(dialog.open).toHaveBeenCalledWith(
+      DismissProblemDialog,
+      expect.objectContaining({
+        autoFocus: '#dismiss-problem-notes',
+        panelClass: 'timeline-item-dialog-panel',
+        restoreFocus: false,
+        width: '422px',
+      }),
+    );
+    expect(dashboard.suggestedProblems()).not.toContainEqual(problem);
+    expect(dashboard.declinedProblems()).toContainEqual({
+      ...problem,
+      dismissalNotes: 'Blood pressure normalized after repeat testing.',
+      id: `declined-${problem.id}`,
+    });
   });
 
   it('edits a timeline row label and keeps the change undoable', () => {
@@ -669,6 +698,95 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     expect(dashboard.pregnancyTimeline().groups.some((item) => item.id === group.id)).toBe(false);
+    expect(fixture.nativeElement.querySelector('#timeline-condition-tooltip')).toBeNull();
+    expect(dashboard.canUndoTimeline()).toBe(true);
+  });
+
+  it('confirms resolution, saves notes, and moves the muted problem to the bottom', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const dashboard = fixture.componentInstance;
+    const group = dashboard.pregnancyTimeline().groups[0];
+    const toggle = fixture.nativeElement.querySelector(
+      '.problem-timeline__group-toggle',
+    ) as HTMLButtonElement;
+
+    toggle.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    const resolveButton = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__resolve',
+    ) as HTMLButtonElement;
+    resolveButton.click();
+    fixture.detectChanges();
+
+    const confirmation = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip--resolve-confirmation',
+    ) as HTMLElement;
+    expect(confirmation.getAttribute('role')).toBe('alertdialog');
+    expect(confirmation.textContent).toContain('Resolve Problem');
+    expect(confirmation.textContent).toContain(`Mark “${group.label}” as resolved?`);
+
+    const notes = confirmation.querySelector('textarea') as HTMLTextAreaElement;
+    notes.value = 'Reviewed with the patient; no further follow-up is needed.';
+    notes.dispatchEvent(new Event('input'));
+
+    const confirmButton = confirmation.querySelector(
+      '.timeline-condition-tooltip__confirm-resolve',
+    ) as HTMLButtonElement;
+    confirmButton.click();
+    fixture.detectChanges();
+
+    const resolvedGroup = dashboard.pregnancyTimeline().groups.at(-1);
+    expect(resolvedGroup).toMatchObject({
+      id: group.id,
+      resolutionNotes: 'Reviewed with the patient; no further follow-up is needed.',
+      resolved: true,
+    });
+
+    const renderedGroups = fixture.nativeElement.querySelectorAll(
+      '.problem-timeline__group',
+    ) as NodeListOf<HTMLElement>;
+    const renderedResolvedGroup = renderedGroups.item(renderedGroups.length - 1);
+    expect(renderedResolvedGroup.classList.contains('problem-timeline__group--resolved')).toBe(
+      true,
+    );
+
+    const resolvedToggle = renderedResolvedGroup.querySelector(
+      '.problem-timeline__group-toggle',
+    ) as HTMLButtonElement;
+    resolvedToggle.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    const description = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__description',
+    ) as HTMLElement;
+    const savedNotes = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__saved-notes',
+    ) as HTMLElement;
+    expect(
+      description.compareDocumentPosition(savedNotes) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+    expect(savedNotes.textContent).toContain(
+      'Reviewed with the patient; no further follow-up is needed.',
+    );
+
+    const reactivateButton = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__reactivate',
+    ) as HTMLButtonElement;
+    expect(reactivateButton.textContent?.trim()).toBe('Reactivate');
+    reactivateButton.click();
+    fixture.detectChanges();
+
+    expect(dashboard.pregnancyTimeline().groups[0]).toMatchObject({
+      id: group.id,
+      resolved: false,
+    });
+    const restoredGroup = fixture.nativeElement.querySelector(
+      '.problem-timeline__group',
+    ) as HTMLElement;
+    expect(restoredGroup.classList.contains('problem-timeline__group--resolved')).toBe(false);
     expect(fixture.nativeElement.querySelector('#timeline-condition-tooltip')).toBeNull();
     expect(dashboard.canUndoTimeline()).toBe(true);
   });
