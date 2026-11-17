@@ -566,7 +566,7 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     const assignButton = fixture.nativeElement.querySelector(
-      '.unmatched-result button',
+      '.unmatched-result__assign',
     ) as HTMLButtonElement;
     assignButton.click();
     fixture.detectChanges();
@@ -603,6 +603,46 @@ describe('PatientDashboard timeline', () => {
     expect(dialogElement.querySelector('#assign-problem-problem-suggestions')).toBeNull();
 
     dialog.closeAll();
+  });
+
+  it('shows a red outlined Ignore action before Assign for every unmatched result', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const results = Array.from(
+      fixture.nativeElement.querySelectorAll('.unmatched-result'),
+    ) as HTMLElement[];
+
+    expect(results).toHaveLength(3);
+    results.forEach((result) => {
+      const ignore = result.querySelector('.unmatched-result__ignore') as HTMLButtonElement;
+      const assign = result.querySelector('.unmatched-result__assign') as HTMLButtonElement;
+
+      expect(ignore.textContent?.trim()).toBe('Ignore');
+      expect(assign.textContent?.trim()).toBe('Assign to Problem');
+      expect(
+        ignore.compareDocumentPosition(assign) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+  });
+
+  it('removes an unmatched result from the list when Ignore is clicked', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const list = fixture.nativeElement.querySelector('.unmatched-results__list') as HTMLElement;
+    const firstResult = list.querySelector('.unmatched-result') as HTMLElement;
+    expect(firstResult.textContent).toContain('Thyroid Panel');
+
+    const ignore = firstResult.querySelector('.unmatched-result__ignore') as HTMLButtonElement;
+    ignore.click();
+    fixture.detectChanges();
+
+    const remainingResults = list.querySelectorAll('.unmatched-result');
+    expect(remainingResults).toHaveLength(2);
+    expect(list.textContent).not.toContain('Thyroid Panel');
+    expect(list.textContent).toContain('Vitamin D');
+    expect(list.textContent).toContain('Ferritin');
   });
 
   it('places the Add Problem action after the timeline groups', () => {

@@ -1351,6 +1351,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       detectionReason: 'age ≥35',
     },
   ]);
+  readonly ignoredUnmatchedResultIds = signal<ReadonlySet<string>>(new Set());
   readonly suggestedProblemsExpanded = signal(true);
   readonly declinedProblemsExpanded = signal(true);
   readonly deletedProblemsExpanded = signal(true);
@@ -3019,6 +3020,14 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       )
       .afterClosed()
       .subscribe(() => trigger?.focus({ preventScroll: true }));
+  }
+
+  ignoreUnmatchedResult(resultId: string): void {
+    this.ignoredUnmatchedResultIds.update((ignoredIds) => {
+      const nextIgnoredIds = new Set(ignoredIds);
+      nextIgnoredIds.add(resultId);
+      return nextIgnoredIds;
+    });
   }
 
   openTimelineItemDialog(groupId: string): void {

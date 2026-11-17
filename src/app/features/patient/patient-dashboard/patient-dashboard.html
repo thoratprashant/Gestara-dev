@@ -2881,42 +2881,81 @@
                   <p>Results returned from Epic that do not match a configured Problem or Task.</p>
                 </header>
                 <div class="unmatched-results__list">
-                  <article class="unmatched-result">
-                    <div>
-                      <strong>Thyroid Panel - TSH, Free T4</strong>
-                      <small>0.4 to 4.5 mIU/L</small>
-                      <time datetime="2026-03-25">Mar 25, 2026</time>
-                    </div>
-                    <div>
-                      <button type="button" (click)="openAssignProblemDialog('thyroid-panel')">
-                        Assign to Problem
-                      </button>
-                    </div>
-                  </article>
-                  <article class="unmatched-result">
-                    <div>
-                      <strong>Vitamin D, 25-Hydroxy</strong>
-                      <small>30 to 100 ng/mL</small>
-                      <time datetime="2026-03-22">Mar 22, 2026</time>
-                    </div>
-                    <div>
-                      <button type="button" (click)="openAssignProblemDialog('vitamin-d')">
-                        Assign to Problem
-                      </button>
-                    </div>
-                  </article>
-                  <article class="unmatched-result">
-                    <div>
-                      <strong>Ferritin Level</strong>
-                      <small>15 to 205 ng/mL</small>
-                      <time datetime="2026-03-20">Mar 20, 2026</time>
-                    </div>
-                    <div>
-                      <button type="button" (click)="openAssignProblemDialog('ferritin')">
-                        Assign to Problem
-                      </button>
-                    </div>
-                  </article>
+                  @if (!ignoredUnmatchedResultIds().has('thyroid-panel')) {
+                    <article class="unmatched-result">
+                      <div>
+                        <strong>Thyroid Panel - TSH, Free T4</strong>
+                        <small>0.4 to 4.5 mIU/L</small>
+                        <time datetime="2026-03-25">Mar 25, 2026</time>
+                      </div>
+                      <div>
+                        <button
+                          class="unmatched-result__ignore"
+                          type="button"
+                          (click)="ignoreUnmatchedResult('thyroid-panel')"
+                        >
+                          Ignore
+                        </button>
+                        <button
+                          class="unmatched-result__assign"
+                          type="button"
+                          (click)="openAssignProblemDialog('thyroid-panel')"
+                        >
+                          Assign to Problem
+                        </button>
+                      </div>
+                    </article>
+                  }
+                  @if (!ignoredUnmatchedResultIds().has('vitamin-d')) {
+                    <article class="unmatched-result">
+                      <div>
+                        <strong>Vitamin D, 25-Hydroxy</strong>
+                        <small>30 to 100 ng/mL</small>
+                        <time datetime="2026-03-22">Mar 22, 2026</time>
+                      </div>
+                      <div>
+                        <button
+                          class="unmatched-result__ignore"
+                          type="button"
+                          (click)="ignoreUnmatchedResult('vitamin-d')"
+                        >
+                          Ignore
+                        </button>
+                        <button
+                          class="unmatched-result__assign"
+                          type="button"
+                          (click)="openAssignProblemDialog('vitamin-d')"
+                        >
+                          Assign to Problem
+                        </button>
+                      </div>
+                    </article>
+                  }
+                  @if (!ignoredUnmatchedResultIds().has('ferritin')) {
+                    <article class="unmatched-result">
+                      <div>
+                        <strong>Ferritin Level</strong>
+                        <small>15 to 205 ng/mL</small>
+                        <time datetime="2026-03-20">Mar 20, 2026</time>
+                      </div>
+                      <div>
+                        <button
+                          class="unmatched-result__ignore"
+                          type="button"
+                          (click)="ignoreUnmatchedResult('ferritin')"
+                        >
+                          Ignore
+                        </button>
+                        <button
+                          class="unmatched-result__assign"
+                          type="button"
+                          (click)="openAssignProblemDialog('ferritin')"
+                        >
+                          Assign to Problem
+                        </button>
+                      </div>
+                    </article>
+                  }
                 </div>
                 <p class="unmatched-results__note">
                   **Note: If the problem/category/task is not available then kindly create one first
