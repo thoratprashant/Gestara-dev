@@ -4,7 +4,7 @@
   display: flex;
   box-sizing: border-box;
   flex-direction: column;
-  height: 266.006px;
+  height: auto;
   margin-left: 15px;
   overflow: hidden;
   color: #171f26;
@@ -18,7 +18,7 @@
 }
 
 .timeline-condition-tooltip--remove {
-  height: 240px;
+  height: auto;
 }
 
 .timeline-condition-tooltip--resolve-confirmation {
@@ -98,13 +98,17 @@
 
 .timeline-condition-tooltip__body {
   display: flex;
-  flex: 1 1 130.86px;
+  flex: 0 1 auto;
   box-sizing: border-box;
   flex-direction: column;
   gap: 19.128px;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 12.752px 25.504px;
+  overscroll-behavior: contain;
+  scrollbar-color: #8e8e8e transparent;
+  scrollbar-width: thin;
 }
 
 .timeline-condition-tooltip__tags,
@@ -185,8 +189,12 @@
   flex-direction: column;
   gap: 10px;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 16px 20px;
+  overscroll-behavior: contain;
+  scrollbar-color: #8e8e8e transparent;
+  scrollbar-width: thin;
 }
 
 .timeline-condition-tooltip__notes-editor {
@@ -248,11 +256,30 @@
 
 .timeline-condition-tooltip__remove-body {
   display: flex;
-  flex: 0 0 137px;
+  flex: 0 1 auto;
   box-sizing: border-box;
   flex-direction: column;
   gap: 15px;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
   padding: 20px 20px 16px;
+  overscroll-behavior: contain;
+  scrollbar-color: #8e8e8e transparent;
+  scrollbar-width: thin;
+}
+
+.timeline-condition-tooltip__body::-webkit-scrollbar,
+.timeline-condition-tooltip__resolve-body::-webkit-scrollbar,
+.timeline-condition-tooltip__remove-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.timeline-condition-tooltip__body::-webkit-scrollbar-thumb,
+.timeline-condition-tooltip__resolve-body::-webkit-scrollbar-thumb,
+.timeline-condition-tooltip__remove-body::-webkit-scrollbar-thumb {
+  background: #8e8e8e;
+  border-radius: 999px;
 }
 
 .timeline-condition-tooltip__problem {

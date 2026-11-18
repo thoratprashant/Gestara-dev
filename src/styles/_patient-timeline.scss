@@ -670,6 +670,12 @@
   color: #98a1aa;
 }
 
+.problem-timeline__group--resolved .problem-timeline__group-toggle strong {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: currentColor;
+}
+
 .problem-timeline__group--resolved .problem-timeline__group-icon,
 .problem-timeline__group--resolved .problem-timeline__group-drag-icon,
 .problem-timeline__group--resolved .problem-timeline__group-add {

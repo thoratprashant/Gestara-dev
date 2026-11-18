@@ -1222,7 +1222,13 @@
                           </td>
                           <td>{{ entry.deliveryLocation }}</td>
                           <td>{{ entry.complications }}</td>
-                          <td>{{ entry.living }}</td>
+                          <td>
+                            <span class="pregnancy-history-tooltip__newborn-list">
+                              @for (newborn of entry.newborns; track $index) {
+                                <span>{{ entry.living }}</span>
+                              }
+                            </span>
+                          </td>
                         </tr>
                       }
                     </tbody>
@@ -2044,23 +2050,18 @@
       >
         <div class="timeline-status-tooltip__content">
           <header class="timeline-status-tooltip__header">
-            <h2>{{ activeStatusTooltip.tooltip.title }}</h2>
-            <p>{{ activeStatusTooltip.tooltip.subtitle }}</p>
+            <div class="timeline-status-tooltip__heading">
+              <h2>{{ activeStatusTooltip.tooltip.title }}</h2>
+              <p>{{ activeStatusTooltip.tooltip.subtitle }}</p>
+            </div>
             <span
               class="timeline-status-tooltip__badge"
               [attr.data-status]="activeStatusTooltip.tooltip.status"
             >
               <span class="timeline-status-tooltip__status-icon" aria-hidden="true"></span>
-              @if (activeStatusTooltip.tooltip.badgeLabel === 'Completed/Not Reviewed') {
-                <span class="timeline-status-tooltip__badge-lines">
-                  <span>Completed/</span>
-                  <span>Not Reviewed</span>
-                </span>
-              } @else {
-                <span class="timeline-status-tooltip__badge-lines">
-                  <span>{{ activeStatusTooltip.tooltip.badgeLabel }}</span>
-                </span>
-              }
+              <span class="timeline-status-tooltip__badge-lines">
+                <span>{{ activeStatusTooltip.tooltip.badgeLabel }}</span>
+              </span>
             </span>
           </header>
 
@@ -2552,6 +2553,7 @@
         [attr.aria-modal]="
           timelineProblemPendingRemoval() || timelineProblemPendingResolution() ? 'true' : null
         "
+        [style.bottom.px]="timelineGroupTooltipPosition().bottom"
         [style.left.px]="timelineGroupTooltipPosition().left"
         [style.top.px]="timelineGroupTooltipPosition().top"
         [style.width.px]="timelineGroupTooltipPosition().width"
@@ -2563,7 +2565,7 @@
       >
         @if (timelineProblemPendingResolution()) {
           <header class="timeline-condition-tooltip__header">
-            <h2>Resolve Problem</h2>
+            <h2>Resolve Problem?</h2>
             <button
               type="button"
               [attr.aria-label]="'Close resolve ' + group.label + ' confirmation'"
@@ -2574,6 +2576,10 @@
           </header>
 
           <div class="timeline-condition-tooltip__resolve-body">
+            <div class="timeline-condition-tooltip__problem">
+              <span>Problem to resolve</span>
+              <strong>{{ group.condition.tags[0].label }} - {{ group.label }}</strong>
+            </div>
             <label class="timeline-condition-tooltip__notes-editor">
               <span>Notes</span>
               <textarea

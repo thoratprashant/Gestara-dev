@@ -93,6 +93,13 @@ interface VitalTooltipPosition {
   width: number;
 }
 
+interface TimelineGroupTooltipPosition {
+  bottom: number | null;
+  left: number;
+  top: number | null;
+  width: number;
+}
+
 interface AnchoredTooltipPosition {
   bottom: number | null;
   left: number;
@@ -1227,7 +1234,8 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly timelineProblemPendingRemoval = signal<TimelineGroup | null>(null);
   readonly timelineProblemPendingResolution = signal<TimelineGroup | null>(null);
   readonly timelineProblemResolutionNotes = signal('');
-  readonly timelineGroupTooltipPosition = signal<VitalTooltipPosition>({
+  readonly timelineGroupTooltipPosition = signal<TimelineGroupTooltipPosition>({
+    bottom: null,
     left: 0,
     top: 0,
     width: 350,
@@ -1372,6 +1380,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   private eddTooltipHideTimer: number | null = null;
   private pregnancyHistoryTooltipHideTimer: number | null = null;
   private timelineGroupTooltipHideTimer: number | null = null;
+  private timelineGroupTooltipTrigger: HTMLElement | null = null;
   private timelineStatusTooltipHideTimer: number | null = null;
   private deliveryChipTooltipHideTimer: number | null = null;
   private timelineStatusTooltipInteractionActive = false;
@@ -1886,21 +1895,19 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       .querySelector<HTMLElement>('.problem-timeline__group-icon')
       ?.getBoundingClientRect();
     const width = Math.min(350, Math.max(window.innerWidth - 24, 280));
-    const tooltipHeight = Math.min(266.006, Math.max(window.innerHeight - 24, 180));
+    const preferredHeight = 360;
+    const verticalPosition = this.viewportTooltipVerticalPosition(triggerBounds, preferredHeight);
     const tooltipLeftMargin = 15;
     const maximumLeft = Math.max(12, window.innerWidth - width - 12 - tooltipLeftMargin);
-    const spaceBelow = window.innerHeight - triggerBounds.bottom - 12;
-    const top =
-      spaceBelow >= tooltipHeight + 8
-        ? triggerBounds.bottom + 8
-        : Math.max(12, triggerBounds.top - tooltipHeight - 8);
 
     this.timelineGroupTooltipPosition.set({
+      bottom: verticalPosition.bottom,
       left: this.clamp(iconBounds?.left ?? triggerBounds.left, 12, maximumLeft),
-      top,
+      top: verticalPosition.top,
       width,
     });
-    this.timelineGroupTooltipMaxHeight.set(tooltipHeight);
+    this.timelineGroupTooltipMaxHeight.set(verticalPosition.maxHeight);
+    this.timelineGroupTooltipTrigger = trigger;
     this.activeTimelineGroupTooltip.set(group);
   }
 
@@ -1909,6 +1916,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.timelineProblemPendingRemoval.set(null);
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
+    this.timelineGroupTooltipTrigger = null;
     this.activeTimelineGroupTooltip.set(null);
   }
 
@@ -1929,13 +1937,21 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   private resizeTimelineGroupTooltipForConfirmation(preferredHeight: number): void {
-    const height = Math.min(preferredHeight, Math.max(window.innerHeight - 24, 180));
+    const trigger = this.timelineGroupTooltipTrigger;
+
+    if (!trigger) {
+      return;
+    }
+
+    const triggerBounds = trigger.getBoundingClientRect();
+    const verticalPosition = this.viewportTooltipVerticalPosition(triggerBounds, preferredHeight);
     const position = this.timelineGroupTooltipPosition();
 
-    this.timelineGroupTooltipMaxHeight.set(height);
+    this.timelineGroupTooltipMaxHeight.set(verticalPosition.maxHeight);
     this.timelineGroupTooltipPosition.set({
       ...position,
-      top: this.clamp(position.top, 12, Math.max(12, window.innerHeight - height - 12)),
+      bottom: verticalPosition.bottom,
+      top: verticalPosition.top,
     });
   }
 
@@ -2055,7 +2071,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tests: sourceTooltip.tests?.map((test) => ({ ...test })),
     };
     const triggerBounds = trigger.getBoundingClientRect();
-    const preferredWidth = chip.status === 'future' ? 380 : 320;
+    const preferredWidth = 468;
     const width = Math.min(preferredWidth, Math.max(260, window.innerWidth - 24));
     const preferredHeight: Record<TimelineStatus, number> = {
       completed: 380,
@@ -2520,7 +2536,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.cancelTimelineGroupTooltipHide();
     this.timelineProblemResolutionNotes.set(group.resolutionNotes ?? '');
     this.timelineProblemPendingResolution.set(group);
-    this.resizeTimelineGroupTooltipForConfirmation(340);
+    this.resizeTimelineGroupTooltipForConfirmation(400);
   }
 
   updateTimelineProblemResolutionNotes(event: Event): void {
@@ -2530,7 +2546,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   cancelTimelineProblemResolution(): void {
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
-    this.resizeTimelineGroupTooltipForConfirmation(266.006);
+    this.resizeTimelineGroupTooltipForConfirmation(360);
   }
 
   confirmTimelineProblemResolution(groupId: string): void {

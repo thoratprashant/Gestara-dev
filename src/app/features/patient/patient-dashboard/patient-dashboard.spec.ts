@@ -858,11 +858,12 @@ describe('PatientDashboard timeline', () => {
     dashboard.showTimelineGroupTooltip(group, { currentTarget: toggle } as unknown as Event);
 
     expect(dashboard.timelineGroupTooltipPosition()).toEqual({
+      bottom: 76,
       left: 140,
-      top: 425.994,
+      top: null,
       width: 350,
     });
-    expect(dashboard.timelineGroupTooltipMaxHeight()).toBe(266.006);
+    expect(dashboard.timelineGroupTooltipMaxHeight()).toBe(360);
     expect(dashboard.tooltipGlassActive()).toBe(false);
   });
 
