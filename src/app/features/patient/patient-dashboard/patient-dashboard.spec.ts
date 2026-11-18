@@ -1303,7 +1303,7 @@ describe('PatientDashboard timeline', () => {
     dashboard.endChipInteraction({ pointerId: 10 } as PointerEvent);
 
     expect(dashboard.pregnancyTimeline().deliveryChip).toMatchObject({
-      startWeek: 35,
+      startWeek: 37,
       endWeek: 38,
     });
 
@@ -1323,9 +1323,9 @@ describe('PatientDashboard timeline', () => {
       preventDefault: vi.fn(),
     } as unknown as PointerEvent);
 
-    expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBe(34);
+    expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBe(36);
     dashboard.undoTimelineChange();
-    expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBe(35);
+    expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBe(37);
   });
 
   it('shows and edits the delivery window tooltip from the delivery chip', () => {
@@ -1352,7 +1352,7 @@ describe('PatientDashboard timeline', () => {
     expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBeCloseTo(36 + 2 / 7);
 
     dashboard.cancelDeliveryChipTooltip();
-    expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBe(37);
+    expect(dashboard.pregnancyTimeline().deliveryChip.startWeek).toBe(39);
     expect(dashboard.deliveryChipTooltipOpen()).toBe(false);
   });
 
@@ -2163,5 +2163,36 @@ describe('PatientDashboard timeline', () => {
       '224px',
     );
     expect(timeline.style.getPropertyValue('--problem-timeline-header-height')).toBe('72px');
+  });
+
+  it('switches the assessment and plan between abbreviated and full versions', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    dashboard.progressNoteState.set('submitted');
+    fixture.detectChanges();
+
+    const versionButtons = Array.from(
+      fixture.nativeElement.querySelectorAll('.assessment-plan__version-toggle button'),
+    ) as HTMLButtonElement[];
+    const assessmentPlan = () =>
+      fixture.nativeElement.querySelector('#assessment-plan-content') as HTMLElement;
+
+    expect(versionButtons).toHaveLength(2);
+    expect(versionButtons[0].getAttribute('aria-pressed')).toBe('true');
+    expect(assessmentPlan().textContent).toContain('Routine Prenatal Care');
+    expect(assessmentPlan().textContent).toContain('Third Trimester Labs: Ordered Today');
+    expect(assessmentPlan().textContent).not.toContain('Gestational Hypertension');
+
+    versionButtons[1].click();
+    fixture.detectChanges();
+
+    expect(versionButtons[0].getAttribute('aria-pressed')).toBe('false');
+    expect(versionButtons[1].getAttribute('aria-pressed')).toBe('true');
+    expect(assessmentPlan().textContent).toContain('Routine Prenatal Care');
+    expect(assessmentPlan().textContent).toContain('First Trimester Labs');
+    expect(assessmentPlan().textContent).toContain('Aneuploidy Screening');
+    expect(assessmentPlan().textContent).toContain('Anatomy Ultrasound');
+    expect(assessmentPlan().textContent).toContain('Third Trimester Counseling');
+    expect(assessmentPlan().querySelectorAll('strong')).toHaveLength(3);
   });
 });

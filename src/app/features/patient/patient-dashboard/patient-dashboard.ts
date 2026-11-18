@@ -174,6 +174,7 @@ type ChipInteractionMode = 'move' | 'resize-start' | 'resize-end';
 type TimelineStatusTooltipIcon = 'calendar' | 'clock';
 type TimelineResultReviewState = 'added' | 'dismissed';
 type ProgressNoteState = 'empty' | 'draft' | 'submitted';
+type AssessmentPlanVersion = 'abbreviated' | 'full';
 type RecommendedProblemState = 'pending' | 'added' | 'dismissed';
 type PreEclampsiaRiskStatus = 'update' | 'low' | 'moderate' | 'high';
 
@@ -617,7 +618,7 @@ const VITAL_COUNT_TARGETS: VitalCountValues = {
   bmi: 26.3,
   currentWeight: 165,
   diastolic: 92,
-  fundalHeight: 0,
+  fundalHeight: 29,
   heartRate: 142,
   systolic: 148,
   weightGain: 22,
@@ -890,7 +891,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
   deliveryChip: {
     id: 'delivery-window',
     label: 'Delivery',
-    startWeek: 37,
+    startWeek: 39,
     endWeek: 40,
   },
   maxWeek: 40,
@@ -1074,6 +1075,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly visitSummaryExpanded = signal(true);
   readonly progressNoteExpanded = signal(true);
   readonly progressNoteState = signal<ProgressNoteState>('empty');
+  readonly assessmentPlanVersion = signal<AssessmentPlanVersion>('abbreviated');
   readonly progressNoteSubjective = signal(
     'Patient presents for routine prenatal visit. Reports overall feeling well with good fetal movement. Compliant with home blood glucose monitoring and blood pressure checks. Denies headache, visual changes, epigastric pain, contractions, vaginal bleeding, or leakage of fluid. Following diabetic diet plan with good adherence.',
   );
@@ -1422,6 +1424,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   toggleProgressNote(): void {
     this.progressNoteExpanded.update((expanded) => !expanded);
+  }
+
+  setAssessmentPlanVersion(version: AssessmentPlanVersion): void {
+    this.assessmentPlanVersion.set(version);
   }
 
   startProgressNote(): void {

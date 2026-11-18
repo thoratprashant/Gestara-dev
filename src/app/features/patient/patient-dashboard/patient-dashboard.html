@@ -148,7 +148,7 @@
               />
               <span>
                 <small>Suggested Delivery Window</small>
-                <strong>Week 36–39</strong>
+                <strong>Week 39–40</strong>
               </span>
             </button>
             <button
@@ -390,7 +390,7 @@
             <div>
               <h2>Pre-eclampsia Risk Assessment</h2>
               <p>
-                Sarah Johnson, 32yo <span aria-hidden="true">•</span> 28 Weeks 4 Days
+                Sarah Johnson, 36yo <span aria-hidden="true">•</span> 28 Weeks 4 Days
                 <span aria-hidden="true">•</span> G3P1011
               </p>
             </div>
@@ -678,7 +678,9 @@
               <i aria-hidden="true"></i>
             </div>
             <h3>Cervical Exam</h3>
-            <p><strong class="text-green">Closed, thick, -3 station</strong></p>
+            <p>
+              <strong class="vital-card__value">-</strong>
+            </p>
           </article>
 
           <article
@@ -3516,60 +3518,86 @@
               </section>
 
               <section class="note-block assessment-plan">
+                <div
+                  class="assessment-plan__version-toggle"
+                  role="group"
+                  aria-label="Assessment and plan version"
+                >
+                  <button
+                    type="button"
+                    [class.assessment-plan__version-button--active]="
+                      assessmentPlanVersion() === 'abbreviated'
+                    "
+                    [attr.aria-pressed]="assessmentPlanVersion() === 'abbreviated'"
+                    aria-controls="assessment-plan-content"
+                    (click)="setAssessmentPlanVersion('abbreviated')"
+                  >
+                    Abbreviated Version
+                  </button>
+                  <button
+                    type="button"
+                    [class.assessment-plan__version-button--active]="
+                      assessmentPlanVersion() === 'full'
+                    "
+                    [attr.aria-pressed]="assessmentPlanVersion() === 'full'"
+                    aria-controls="assessment-plan-content"
+                    (click)="setAssessmentPlanVersion('full')"
+                  >
+                    Full Version
+                  </button>
+                </div>
                 <h3>Assessment and Plan:</h3>
-                <article>
-                  <h4>1. Diet Controlled Gestational Diabetes Mellitus (O24.410)</h4>
-                  <ul>
-                    <li>
-                      Home blood glucose logs reviewed – fasting 82–95 mg/dL, postprandial 110–130
-                      mg/dL (well-controlled)
-                    </li>
-                    <li>Growth ultrasound scheduled for 32 weeks to assess for macrosomia</li>
-                    @if (progressNoteState() === 'submitted') {
-                      <li>Diet-controlled, good compliance with nutrition plan</li>
-                      <li>Continue current diabetic diet, check blood glucose QID</li>
-                      <li>Patient counseled on signs of hypo/hyperglycemia</li>
-                    }
-                  </ul>
-                </article>
-                <article>
-                  <h4>2. Gestational Hypertension (O13.9)</h4>
-                  <ul>
-                    <li>
-                      BP elevated today at 148/92 mmHg, home BP logs 135–142/85–90 mmHg (compliant
-                      with monitoring)
-                    </li>
-                    <li>Labs ordered today: CBC, CMP, LFTs, uric acid to rule out progression</li>
-                  </ul>
-                </article>
-                @if (progressNoteState() === 'submitted') {
-                  <article>
-                    <h4>3. Iron Deficiency Anemia (O99.019)</h4>
-                    <ul>
-                      <li>
-                        Most recent Hgb 11.2 g/dL at 25 weeks, improved from 9.8 g/dL at initial
-                        visit
-                      </li>
-                      <li>Continue ferrous sulfate 325mg daily with vitamin C</li>
-                      <li>Repeat CBC scheduled for 32 weeks</li>
-                      <li>Patient tolerating iron supplementation well</li>
-                    </ul>
-                  </article>
-                  <article>
-                    <h4>4. Intrauterine Pregnancy at 28w 4d (Z34.03)</h4>
-                    <ul>
-                      <li>
-                        Tdap vaccine administered today, right deltoid – patient tolerated well
-                      </li>
-                      <li>
-                        Reviewed anatomy ultrasound from 20 weeks – normal fetal anatomy, no
-                        anomalies detected
-                      </li>
-                      <li>GBS screening scheduled for 35–37 weeks</li>
-                      <li>Discussed labor precautions, when to call, signs of preterm labor</li>
-                    </ul>
-                  </article>
-                }
+                <div id="assessment-plan-content" class="assessment-plan__content">
+                  @if (assessmentPlanVersion() === 'abbreviated') {
+                    <article>
+                      <h4>1. Routine Prenatal Care</h4>
+                      <ul>
+                        <li>Third Trimester Labs: Ordered Today</li>
+                        <li>Anatomy Ultrasound: Reviewed Today</li>
+                        <li>Third Trimester Counseling: Completed Today</li>
+                      </ul>
+                    </article>
+                  } @else {
+                    <article class="assessment-plan__full-version">
+                      <h4>1. Routine Prenatal Care:</h4>
+                      <ol class="assessment-plan__categories" type="a">
+                        <li>
+                          <h5>Labs</h5>
+                          <ul>
+                            <li>First Trimester Labs: Completed (9/5/26) / Reviewed (9/8/26)</li>
+                            <li>Third Trimester Labs: <strong>Ordered Today</strong></li>
+                            <li>GBS: Due 36-37 weeks gestation</li>
+                          </ul>
+                        </li>
+                        <li>
+                          <h5>Aneuploidy Screening</h5>
+                          <ul>
+                            <li>Cell Free DNA: Decline</li>
+                          </ul>
+                        </li>
+                        <li>
+                          <h5>Imaging</h5>
+                          <ul>
+                            <li>
+                              First Trimester Ultrasound: Completed (9/5/26) / Reviewed (9/7/26)
+                            </li>
+                            <li>
+                              Anatomy Ultrasound: Completed (10/26/26) /
+                              <strong>Reviewed Today</strong>
+                            </li>
+                          </ul>
+                        </li>
+                        <li>
+                          <h5>Counseling</h5>
+                          <ul>
+                            <li>First Trimester Counseling: Completed (9/5/26)</li>
+                            <li>Third Trimester Counseling: <strong>Completed Today</strong></li>
+                          </ul>
+                        </li>
+                      </ol>
+                    </article>
+                  }
+                </div>
               </section>
 
               @if (progressNoteState() === 'submitted') {

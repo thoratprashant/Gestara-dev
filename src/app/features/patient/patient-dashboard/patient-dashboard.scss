@@ -2275,6 +2275,53 @@
   gap: 0.5rem;
 }
 
+.assessment-plan__version-toggle {
+  display: inline-flex;
+  justify-self: start;
+  padding: 0.1875rem;
+  background: #f1f5f4;
+  border: 1px solid #e3e8e6;
+  border-radius: 0.75rem;
+}
+
+.assessment-plan__version-toggle button {
+  min-height: 1.875rem;
+  padding: 0.375rem 0.75rem;
+  color: #73808c;
+  background: transparent;
+  border: 0;
+  border-radius: 0.5625rem;
+  font: inherit;
+  font-weight: 600;
+  line-height: 1rem;
+  cursor: pointer;
+}
+
+.assessment-plan__version-toggle button:hover {
+  color: #0f766e;
+}
+
+.assessment-plan__version-toggle button:focus-visible {
+  outline: 2px solid rgb(13 148 136 / 35%);
+  outline-offset: 1px;
+}
+
+.assessment-plan__version-toggle .assessment-plan__version-button--active {
+  color: #fff;
+  background: #0d9488;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 12%);
+}
+
+.assessment-plan__version-toggle .assessment-plan__version-button--active:hover {
+  color: #fff;
+  background: #0f766e;
+}
+
+.assessment-plan__content {
+  display: grid;
+  gap: 0.5rem;
+}
+
 .assessment-plan article {
   display: flex;
   flex-direction: column;
@@ -2296,6 +2343,41 @@
   line-height: 1rem;
 }
 
+.assessment-plan__categories {
+  display: grid;
+  gap: 0.75rem;
+  width: calc(100% - var(--progress-note-list-indent));
+  min-width: 0;
+  margin: 0 0 0 auto;
+  padding-left: 1.25rem;
+  list-style: lower-alpha;
+}
+
+.assessment-plan .assessment-plan__categories > li {
+  padding-left: 0.125rem;
+}
+
+.assessment-plan .assessment-plan__categories > li::before {
+  content: none;
+}
+
+.assessment-plan__categories h5 {
+  margin: 0 0 0.375rem;
+  color: #171f26;
+  font: inherit;
+  font-weight: 600;
+}
+
+.assessment-plan .assessment-plan__categories ul {
+  width: 100%;
+  margin-left: 0;
+}
+
+.assessment-plan__categories strong {
+  color: #171f26;
+  font-weight: 700;
+}
+
 .assessment-plan ul,
 .note-list-block ul {
   display: grid;
@@ -2308,6 +2390,10 @@
 .progress-note--draft .assessment-plan ul {
   width: 100%;
   margin-left: 0;
+}
+
+.progress-note--draft .assessment-plan__categories {
+  width: 100%;
 }
 
 .assessment-plan li,
