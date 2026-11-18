@@ -46,6 +46,9 @@
 }
 
 .dismiss-problem-dialog__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   max-height: min(70vh, 31rem);
   padding: 21.059px;
   color: #171f26;
@@ -53,6 +56,36 @@
   font-size: 12px;
   line-height: normal;
   letter-spacing: normal;
+}
+
+.timeline-condition-tooltip__problem {
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 55px;
+  padding: 10px 12px;
+  background: #fafaf9;
+  border: 1px solid #e3ded9;
+  border-radius: 7px;
+}
+
+.timeline-condition-tooltip__problem span {
+  color: #73808c;
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 10px;
+  text-transform: uppercase;
+}
+
+.timeline-condition-tooltip__problem strong {
+  overflow: hidden;
+  color: #171f26;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .dismiss-problem-dialog__field {

@@ -41,7 +41,7 @@
     >
       <header class="patient-summary__header">
         <div class="patient-identity">
-          <h1 id="patient-name">Sarah Johnson</h1>
+          <h1 id="patient-name">Sara Johnson</h1>
           <p>
             <span class="patient-identity__history">DOB: February 16, 1990</span>
             <span class="patient-identity__separator" aria-hidden="true">/</span>
@@ -390,7 +390,7 @@
             <div>
               <h2>Pre-eclampsia Risk Assessment</h2>
               <p>
-                Sarah Johnson, 36yo <span aria-hidden="true">•</span> 28 Weeks 4 Days
+                Sara Johnson, 36yo <span aria-hidden="true">•</span> 28 Weeks 4 Days
                 <span aria-hidden="true">•</span> G3P1011
               </p>
             </div>
@@ -1761,6 +1761,12 @@
                         <strong>{{ problem.detailValue }}</strong>
                         <span>{{ problem.detailReference }}</span>
                       </p>
+                      @if (problem.dismissalNotes) {
+                        <p class="problem-review__dismissal-notes">
+                          <strong>Notes:</strong>
+                          <span>{{ problem.dismissalNotes }}</span>
+                        </p>
+                      }
                     </div>
                     <button
                       class="problem-review__button problem-review__button--primary"
@@ -1907,8 +1913,7 @@
           </label>
 
           <p class="delivery-chip-tooltip__help">
-            Editing here also drags the corresponding marker on the timeline &mdash;<br />
-            and vice versa.
+            Editing here also drags the corresponding marker on the timeline and vice versa.
           </p>
         </div>
 
@@ -2997,18 +3002,33 @@
                 </div> -->
 
                 <div class="order-picker__category">
-                  <h4>Routine Prenatal Care</h4>
+                  <div class="order-picker__category-heading">
+                    <h4>Routine Prenatal Care</h4>
+                    <div class="problem-review__problem-title">
+                      <span>ICD-10 Z34.83</span>
+                    </div>
+                  </div>
                   <button type="button"><i></i>1hr GTT</button>
                   <button type="button"><i></i>CBC</button>
                   <button type="button"><i></i>HIV antigen/antibody</button>
                   <button type="button"><i></i>Syphilis antibody</button>
                 </div>
                 <div class="order-picker__category order-picker__category--blood-pressure">
-                  <h4>Elevated Blood Pressure Without Diagnosis of Hypertension</h4>
+                  <div class="order-picker__category-heading">
+                    <h4>Elevated Blood Pressure Without Diagnosis of Hypertension</h4>
+                    <div class="problem-review__problem-title">
+                      <span>ICD-10 O10.019</span>
+                    </div>
+                  </div>
                   <button type="button"><i></i>Ambulatory blood pressure monitor</button>
                 </div>
                 <div class="order-picker__category order-picker__category--hypertension">
-                  <h4>Gestational Hypertension without Proteinuria</h4>
+                  <div class="order-picker__category-heading">
+                    <h4>Gestational Hypertension without Proteinuria</h4>
+                    <div class="problem-review__problem-title">
+                      <span>ICD-10 O13.3</span>
+                    </div>
+                  </div>
                   <button type="button"><i></i>Ambulatory blood pressure monitor</button>
                 </div>
               </section>
@@ -3495,7 +3515,7 @@
           >
             <div class="clinical-section__body progress-note__body">
               <p class="progress-note__patient">
-                <strong>Patient:</strong> Sarah Johnson, 32 year old female, G3P1011, 28w 4d
+                <strong>Patient:</strong> Sara Johnson, 36 year old female, G3P1011, 28w 4d
               </p>
 
               <section class="note-block">
@@ -3530,35 +3550,37 @@
               </section>
 
               <section class="note-block assessment-plan">
-                <div
-                  class="assessment-plan__version-toggle"
-                  role="group"
-                  aria-label="Assessment and plan version"
-                >
-                  <button
-                    type="button"
-                    [class.assessment-plan__version-button--active]="
-                      assessmentPlanVersion() === 'abbreviated'
-                    "
-                    [attr.aria-pressed]="assessmentPlanVersion() === 'abbreviated'"
-                    aria-controls="assessment-plan-content"
-                    (click)="setAssessmentPlanVersion('abbreviated')"
+                <div class="assessment-plan__header">
+                  <h3>Assessment and Plan:</h3>
+                  <div
+                    class="assessment-plan__version-toggle"
+                    role="group"
+                    aria-label="Assessment and plan version"
                   >
-                    Abbreviated Version
-                  </button>
-                  <button
-                    type="button"
-                    [class.assessment-plan__version-button--active]="
-                      assessmentPlanVersion() === 'full'
-                    "
-                    [attr.aria-pressed]="assessmentPlanVersion() === 'full'"
-                    aria-controls="assessment-plan-content"
-                    (click)="setAssessmentPlanVersion('full')"
-                  >
-                    Full Version
-                  </button>
+                    <button
+                      type="button"
+                      [class.assessment-plan__version-button--active]="
+                        assessmentPlanVersion() === 'abbreviated'
+                      "
+                      [attr.aria-pressed]="assessmentPlanVersion() === 'abbreviated'"
+                      aria-controls="assessment-plan-content"
+                      (click)="setAssessmentPlanVersion('abbreviated')"
+                    >
+                      Abbreviated
+                    </button>
+                    <button
+                      type="button"
+                      [class.assessment-plan__version-button--active]="
+                        assessmentPlanVersion() === 'full'
+                      "
+                      [attr.aria-pressed]="assessmentPlanVersion() === 'full'"
+                      aria-controls="assessment-plan-content"
+                      (click)="setAssessmentPlanVersion('full')"
+                    >
+                      Full
+                    </button>
+                  </div>
                 </div>
-                <h3>Assessment and Plan:</h3>
                 <div id="assessment-plan-content" class="assessment-plan__content">
                   @if (assessmentPlanVersion() === 'abbreviated') {
                     <article>

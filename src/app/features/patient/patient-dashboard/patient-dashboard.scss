@@ -1566,6 +1566,17 @@
   gap: 0.25rem;
 }
 
+.order-picker__category-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem 0.5rem;
+  align-items: center;
+}
+
+.order-picker__category-heading .problem-review__problem-title {
+  flex: 0 0 auto;
+}
+
 .order-picker__category h4 {
   margin: 0;
   color: #6b7280;
@@ -2274,9 +2285,17 @@
   gap: 0.5rem;
 }
 
+.assessment-plan__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .assessment-plan__version-toggle {
   display: inline-flex;
-  justify-self: start;
+  flex: 0 0 auto;
   padding: 0.1875rem;
   background: #f1f5f4;
   border: 1px solid #e3e8e6;

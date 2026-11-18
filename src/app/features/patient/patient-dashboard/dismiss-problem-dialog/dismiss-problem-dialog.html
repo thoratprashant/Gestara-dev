@@ -18,6 +18,10 @@
 
   <form class="w-100" [formGroup]="form" (ngSubmit)="submit()">
     <mat-dialog-content class="dismiss-problem-dialog__body">
+      <div class="timeline-condition-tooltip__problem">
+        <span>Problem to dismiss</span>
+        <strong>{{ displayIcdCode }} - {{ data.problemName }}</strong>
+      </div>
       <div class="dismiss-problem-dialog__field d-flex flex-column align-items-start w-100">
         <label class="w-100 text-start text-uppercase fw-semibold" for="dismiss-problem-notes">
           Notes

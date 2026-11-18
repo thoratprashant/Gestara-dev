@@ -20,6 +20,7 @@ import {
 } from './assign-problem-dialog/assign-problem-dialog';
 import {
   DismissProblemDialog,
+  DismissProblemDialogData,
   DismissProblemDialogResult,
 } from './dismiss-problem-dialog/dismiss-problem-dialog';
 import {
@@ -881,7 +882,7 @@ const TIMELINE_STATUS_TOOLTIPS: Record<TimelineStatus, TimelineStatusTooltip> = 
       { label: 'Antibody Screen (Repeat)', showActions: true },
       { label: '1-hour Glucose (if not done)', removed: true },
     ],
-    title: 'Labs (Repeat)',
+    title: 'Routine Labs (Repeat)',
   },
 };
 
@@ -912,7 +913,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
       rows: [
         {
           id: 'labs',
-          label: 'Labs',
+          label: 'Routine Labs',
           chips: [
             {
               id: 'labs-1',
@@ -1263,7 +1264,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   });
   readonly deliveryChipTooltipMaxHeight = signal(460);
   readonly deliveryChipIndication = signal(
-    'GDM and gestational hypertension - recommend delivery at term.',
+    'Advanced maternal age',
   );
   readonly deliveryChipNotes = signal(
     'MFM consult 4/11; agrees with 39w induction pending BP control.',
@@ -2901,13 +2902,20 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     this.dialog
-      .open<DismissProblemDialog, void, DismissProblemDialogResult>(DismissProblemDialog, {
-        autoFocus: '#dismiss-problem-notes',
-        maxWidth: 'calc(100vw - 1.5rem)',
-        panelClass: 'timeline-item-dialog-panel',
-        restoreFocus: false,
-        width: '422px',
-      })
+      .open<DismissProblemDialog, DismissProblemDialogData, DismissProblemDialogResult>(
+        DismissProblemDialog,
+        {
+          autoFocus: '#dismiss-problem-notes',
+          data: {
+            icdCode: problem.icdCode,
+            problemName: problem.name,
+          },
+          maxWidth: 'calc(100vw - 1.5rem)',
+          panelClass: 'timeline-item-dialog-panel',
+          restoreFocus: false,
+          width: '422px',
+        },
+      )
       .afterClosed()
       .subscribe((result) => {
         if (result) {

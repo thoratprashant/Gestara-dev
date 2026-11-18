@@ -311,6 +311,7 @@
 }
 
 .problem-review__problem-copy {
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -350,6 +351,27 @@
 .problem-review__metric span + strong,
 .problem-review__metric strong + span {
   margin-left: 0.1875rem;
+}
+
+.problem-review__problem-copy .problem-review__dismissal-notes {
+  display: flex;
+  gap: 0.25rem;
+  margin-top: 0.375rem;
+  color: #53616d;
+  line-height: 1rem;
+  white-space: pre-wrap;
+}
+
+.problem-review__dismissal-notes strong {
+  flex: 0 0 auto;
+  color: #73808c;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.problem-review__dismissal-notes span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .problem-review__actions {

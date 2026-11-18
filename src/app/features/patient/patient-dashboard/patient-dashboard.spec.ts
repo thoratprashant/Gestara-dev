@@ -213,6 +213,10 @@ describe('PatientDashboard timeline', () => {
       DismissProblemDialog,
       expect.objectContaining({
         autoFocus: '#dismiss-problem-notes',
+        data: {
+          icdCode: problem.icdCode,
+          problemName: problem.name,
+        },
         panelClass: 'timeline-item-dialog-panel',
         restoreFocus: false,
         width: '422px',
@@ -224,6 +228,24 @@ describe('PatientDashboard timeline', () => {
       dismissalNotes: 'Blood pressure normalized after repeat testing.',
       id: `declined-${problem.id}`,
     });
+  });
+
+  it('shows saved dismissal notes below the declined problem metric', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    const problem = dashboard.declinedProblems()[0];
+
+    dashboard.declinedProblems.set([
+      { ...problem, dismissalNotes: 'Blood pressure normalized after repeat testing.' },
+    ]);
+    fixture.detectChanges();
+
+    const notes = fixture.nativeElement.querySelector(
+      '#declined-problems-list .problem-review__dismissal-notes',
+    ) as HTMLElement;
+
+    expect(notes.textContent).toContain('Notes:');
+    expect(notes.textContent).toContain('Blood pressure normalized after repeat testing.');
   });
 
   it('edits a timeline row label and keeps the change undoable', () => {
@@ -1469,6 +1491,12 @@ describe('PatientDashboard timeline', () => {
       'Elevated Blood Pressure Without Diagnosis of Hypertension',
       'Gestational Hypertension without Proteinuria',
     ]);
+    expect(
+      Array.from(
+        orderPicker.querySelectorAll('.order-picker__category-heading .problem-review__problem-title'),
+        (badge: unknown) => (badge as HTMLElement).textContent?.trim(),
+      ),
+    ).toEqual(['ICD-10 Z34.83', 'ICD-10 R03.0', 'ICD-10 O13.3']);
     expect(
       Array.from(
         orderPicker.querySelectorAll('.order-picker__category button'),
