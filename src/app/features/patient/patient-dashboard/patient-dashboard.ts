@@ -1304,20 +1304,11 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       id: 'suggested-gestational-hypertension',
       name: 'Gestational Hypertension',
       icdCode: 'ICD-10 O13.3',
-      detectionReason: 'BP: 159/109 (140/90)',
+      detectionReason: 'BP: 148/92 (140/90)',
       detailLabel: 'BP:',
-      detailValue: '159/109',
+      detailValue: '148/92',
       detailReference: '(140/90)',
-    },
-    {
-      id: 'suggested-advanced-maternal-age',
-      name: 'Advanced Maternal Age',
-      icdCode: 'ICD-10 O13.3',
-      detectionReason: 'Age: 36 (≥ 35)',
-      detailLabel: 'Age:',
-      detailValue: '36',
-      detailReference: '(≥ 35 )',
-    },
+    }
   ]);
   readonly declinedProblems = signal<readonly SuggestedProblem[]>([
     {
