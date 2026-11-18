@@ -1618,9 +1618,9 @@
                                 timelineChipTooltip(chip) +
                                 '. Use left and right arrow keys to move.'
                               "
-                              (mouseenter)="showTimelineStatusTooltip(chip, $event)"
+                              (mouseenter)="showTimelineStatusTooltip(chip, $event, group.resolved)"
                               (mouseleave)="scheduleTimelineStatusTooltipHide()"
-                              (focusin)="showTimelineStatusTooltip(chip, $event)"
+                              (focusin)="showTimelineStatusTooltip(chip, $event, group.resolved)"
                               (focusout)="scheduleTimelineStatusTooltipHide()"
                               (pointerdown)="
                                 startChipInteraction($event, group.id, row.id, chip, 'move')
@@ -1923,8 +1923,10 @@
       <aside
         id="due-soon-tooltip"
         class="due-soon-tooltip"
+        [class.due-soon-tooltip--read-only]="dueSoonTooltip.readOnly"
         data-timeline-hover-tooltip
         role="dialog"
+        [attr.aria-readonly]="dueSoonTooltip.readOnly"
         aria-label="Vaccines task details"
         [attr.data-placement]="timelineStatusTooltipPosition().placement"
         [style.left.px]="timelineStatusTooltipPosition().left"
@@ -1981,7 +1983,7 @@
                     <input
                       type="checkbox"
                       [checked]="item.completed"
-                      [disabled]="item.declined"
+                      [disabled]="item.declined || dueSoonTooltip.readOnly"
                       (change)="toggleDueSoonChecklistItem(item.id)"
                     />
                     <span class="due-soon-tooltip__checkbox" aria-hidden="true"></span>
@@ -2002,6 +2004,7 @@
                     <span>Notes (Required)</span>
                     <textarea
                       rows="2"
+                      [readOnly]="dueSoonTooltip.readOnly"
                       [value]="dueSoonTooltip.notes"
                       (input)="updateDueSoonNotes($event)"
                     ></textarea>
@@ -2025,11 +2028,13 @@
       <aside
         id="timeline-status-tooltip"
         class="timeline-status-tooltip"
+        [class.timeline-status-tooltip--read-only]="activeStatusTooltip.readOnly"
         data-timeline-hover-tooltip
         [class.timeline-status-tooltip--submitted-results]="
           activeStatusTooltip.tooltip.resultsSubmitted
         "
         role="dialog"
+        [attr.aria-readonly]="activeStatusTooltip.readOnly"
         [attr.aria-label]="activeStatusTooltip.tooltip.badgeLabel + ' timeline details'"
         [attr.data-placement]="timelineStatusTooltipPosition().placement"
         [attr.data-status]="activeStatusTooltip.tooltip.status"
@@ -2491,6 +2496,7 @@
               <span>Notes:</span>
               <textarea
                 rows="3"
+                [readOnly]="activeStatusTooltip.readOnly"
                 [placeholder]="activeStatusTooltip.tooltip.notesPlaceholder"
               ></textarea>
             </label>

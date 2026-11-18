@@ -238,6 +238,7 @@ interface TimelineStatusTooltip {
 
 interface ActiveTimelineStatusTooltip {
   chipId: string;
+  readOnly: boolean;
   tooltip: TimelineStatusTooltip;
 }
 
@@ -252,6 +253,7 @@ interface ActiveDueSoonTooltip {
   chipId: string;
   items: DueSoonChecklistItem[];
   notes: string;
+  readOnly: boolean;
 }
 
 interface TimelineStatusTooltipPosition extends VitalTooltipPosition {
@@ -2040,7 +2042,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.hideTimelineStatusTooltip();
   }
 
-  showTimelineStatusTooltip(chip: TimelineChip, event: Event): void {
+  showTimelineStatusTooltip(chip: TimelineChip, event: Event, readOnly = false): void {
     this.cancelTimelineStatusTooltipHide();
     this.hideDeliveryChipTooltip();
     this.hideVitalTooltip();
@@ -2057,7 +2059,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }
 
     if (chip.status === 'due-soon') {
-      this.showDueSoonTooltip(chip, trigger);
+      this.showDueSoonTooltip(chip, trigger, readOnly);
       return;
     }
 
@@ -2111,10 +2113,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       width,
     });
     this.timelineStatusTooltipMaxHeight.set(maxHeight);
-    this.activeTimelineStatusTooltip.set({ chipId: chip.id, tooltip });
+    this.activeTimelineStatusTooltip.set({ chipId: chip.id, readOnly, tooltip });
   }
 
-  private showDueSoonTooltip(chip: TimelineChip, trigger: HTMLElement): void {
+  private showDueSoonTooltip(chip: TimelineChip, trigger: HTMLElement, readOnly: boolean): void {
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
     const preferredHeight = 470;
@@ -2152,6 +2154,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       chipId: chip.id,
       items: (savedProgress?.items ?? DUE_SOON_CHECKLIST).map((item) => ({ ...item })),
       notes: savedProgress?.notes ?? DUE_SOON_DEFAULT_NOTES,
+      readOnly,
     });
   }
 

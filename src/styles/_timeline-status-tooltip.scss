@@ -691,6 +691,33 @@
   align-items: center;
 }
 
+.timeline-status-tooltip--read-only button,
+.timeline-status-tooltip--read-only input,
+.timeline-status-tooltip--read-only .timeline-status-tooltip__notes--editable {
+  display: none;
+}
+
+.timeline-status-tooltip--read-only textarea {
+  resize: none;
+  pointer-events: none;
+  background: #fafaf9;
+  border-color: #e3ded9;
+  box-shadow: none;
+}
+
+.due-soon-tooltip--read-only .due-soon-tooltip__item > button,
+.due-soon-tooltip--read-only .due-soon-tooltip__footer {
+  display: none;
+}
+
+.due-soon-tooltip--read-only textarea {
+  resize: none;
+  pointer-events: none;
+  background: #fafaf9;
+  border-color: #e3ded9;
+  box-shadow: none;
+}
+
 .timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__schedule--reviewed {
   flex-flow: row wrap;
   justify-content: space-between;
