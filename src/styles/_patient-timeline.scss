@@ -669,11 +669,16 @@
 .problem-timeline__group-header {
   position: relative;
   z-index: 1;
-  display: flex;
-  align-items: center;
   width: 100%;
   background: rgba(13, 148, 136, 0.05);
-  padding-left: 10px;
+}
+
+.problem-timeline__group-heading {
+  display: flex;
+  align-items: center;
+  width: 12.5rem;
+  min-width: 0;
+  padding-left: 0.625rem;
 }
 
 .problem-timeline__groups {
@@ -772,9 +777,10 @@
 .problem-timeline__group-toggle {
   display: flex;
   align-items: center;
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   gap: 0.5rem;
-  width: auto;
+  width: 0;
+  min-width: 0;
   min-height: 2.5rem;
   padding: 0.625rem 0.25rem 0.625rem 0.25rem;
   color: #171f26;
@@ -789,12 +795,17 @@
 }
 
 .problem-timeline__group-toggle strong {
+  min-width: 0;
+  overflow: hidden;
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .problem-timeline__group-icon {
+  flex: 0 0 auto;
   width: 0.875rem;
   height: 0.875rem;
 }
@@ -1023,6 +1034,23 @@
 
 .mat-mdc-tooltip-surface.mdc-tooltip__surface {
   font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+.problem-name-tooltip {
+  --mat-tooltip-container-color: #171f26;
+  --mat-tooltip-supporting-text-color: #fff;
+  --mat-tooltip-supporting-text-font: 'Plus Jakarta Sans', sans-serif;
+  --mat-tooltip-supporting-text-size: 0.75rem;
+  --mat-tooltip-supporting-text-weight: 500;
+  --mat-tooltip-supporting-text-line-height: 1rem;
+
+  .mat-mdc-tooltip-surface {
+    max-width: min(22rem, calc(100vw - 2rem));
+    padding: 0.5rem 0.75rem;
+    overflow-wrap: anywhere;
+    border-radius: 0.375rem;
+    white-space: normal;
+  }
 }
 
 @media (max-width: 61.999rem) {

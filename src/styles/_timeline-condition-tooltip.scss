@@ -69,8 +69,9 @@
 }
 
 .timeline-condition-tooltip__header {
-  flex: 0 0 63.761px;
+  flex: 0 0 auto;
   box-sizing: border-box;
+  min-height: 63.761px;
   border-bottom: 0.797px solid #e3ded9;
   border-radius: 18.331px 18.331px 0 0;
 }
@@ -82,13 +83,13 @@
 }
 
 .timeline-condition-tooltip__header h2 {
+  flex: 1 1 auto;
   min-width: 0;
-  overflow: hidden;
   font-size: 14.346px;
   font-weight: 700;
-  line-height: normal;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .timeline-condition-tooltip__header button {

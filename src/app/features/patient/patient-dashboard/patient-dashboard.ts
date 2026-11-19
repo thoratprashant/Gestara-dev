@@ -654,6 +654,33 @@ const TIMELINE_CONDITION_DETAILS: Record<string, TimelineConditionDetails> = {
       { label: 'Diet controlled', tone: 'teal' },
     ],
   },
+  'elevated-blood-pressure': {
+    description: 'Elevated blood pressure reading without a diagnosis of hypertension.',
+    tags: [
+      { label: 'R03.0', tone: 'purple' },
+      { label: 'T3', tone: 'pink' },
+      { label: 'Blood pressure', tone: 'blue' },
+      { label: 'Monitoring', tone: 'teal' },
+    ],
+  },
+  'advanced-maternal-age': {
+    description: 'Supervision of pregnancy with advanced maternal age.',
+    tags: [
+      { label: 'O09.529', tone: 'purple' },
+      { label: 'T3', tone: 'pink' },
+      { label: 'High risk', tone: 'blue' },
+      { label: 'Maternal age', tone: 'teal' },
+    ],
+  },
+  'gestational-hypertension': {
+    description: 'Gestational hypertension without significant proteinuria.',
+    tags: [
+      { label: 'O13.3', tone: 'purple' },
+      { label: 'T3', tone: 'pink' },
+      { label: 'High risk', tone: 'blue' },
+      { label: 'Monitoring', tone: 'teal' },
+    ],
+  },
   'hypertension-monitoring': {
     description: 'Gestational hypertension without significant proteinuria, third trimester.',
     tags: [
@@ -727,49 +754,6 @@ const TIMELINE_CONDITION_DETAILS: Record<string, TimelineConditionDetails> = {
     ],
   },
 };
-
-const ADDITIONAL_TIMELINE_GROUPS: TimelineGroup[] = [
-  ['hypertension-monitoring', 'Hypertension Monitoring', 'Blood pressure review'],
-  ['medication-management', 'Medication Management', 'Medication reconciliation'],
-  ['fetal-surveillance', 'Fetal Surveillance', 'Non-stress testing'],
-  ['nutrition-lifestyle', 'Nutrition & Lifestyle', 'Nutrition counseling'],
-  ['laboratory-follow-up', 'Laboratory Follow-up', 'Repeat laboratory panel'],
-  ['delivery-planning', 'Delivery Planning', 'Delivery readiness review'],
-  ['postpartum-planning', 'Postpartum Planning', 'Postpartum care plan'],
-  ['patient-education', 'Patient Education', 'Pregnancy education'],
-].map(([id, label, rowLabel], index) => {
-  const statuses: TimelineStatus[] = [
-    'completed',
-    'not-reviewed',
-    'ordered',
-    'due-soon',
-    'late',
-    'incomplete',
-    'future',
-  ];
-  const startWeek = 8 + ((index * 4) % 25);
-
-  return {
-    condition: TIMELINE_CONDITION_DETAILS[id],
-    id,
-    label,
-    rows: [
-      {
-        id: `${id}-task`,
-        label: rowLabel,
-        chips: [
-          {
-            id: `${id}-chip`,
-            label: rowLabel,
-            status: statuses[index % statuses.length],
-            startWeek,
-            endWeek: Math.min(startWeek + 5, 40),
-          },
-        ],
-      },
-    ],
-  };
-});
 
 const TIMELINE_STATUS_TOOLTIPS: Record<TimelineStatus, TimelineStatusTooltip> = {
   ordered: {
@@ -955,7 +939,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
         },
         {
           id: 'aneuploidy-screening',
-          label: 'Aneuploidy screening',
+          label: 'Routine Ultrasounds',
           chips: [
             {
               id: 'aneuploidy-1',
@@ -968,7 +952,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
         },
         {
           id: 'genetic-screening',
-          label: 'Genetic screening',
+          label: 'Aneuploidy screening',
           chips: [
             {
               id: 'genetic-1',
@@ -981,7 +965,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
         },
         {
           id: 'anatomy-ultrasound',
-          label: 'Anatomy ultrasound',
+          label: 'Genetic screening',
           chips: [
             {
               id: 'anatomy-1',
@@ -994,14 +978,14 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
         },
         {
           id: 'gbs-screening',
-          label: 'GBS screening',
+          label: 'Counseling',
           chips: [
             { id: 'gbs-1', label: 'GBS screening', status: 'future', startWeek: 35, endWeek: 37 },
           ],
         },
         {
           id: 'glucose-screening',
-          label: 'Glucose screening',
+          label: 'Social/Behavioral Screening',
           chips: [
             {
               id: 'glucose-1',
@@ -1012,16 +996,9 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
             },
           ],
         },
-      ],
-    },
-    {
-      condition: TIMELINE_CONDITION_DETAILS['gdm-monitoring'],
-      id: 'gdm-monitoring',
-      label: 'GDM Monitoring',
-      rows: [
         {
           id: 'blood-glucose-log',
-          label: 'Blood glucose log',
+          label: 'Immunizations',
           chips: [
             {
               id: 'glucose-log-1',
@@ -1034,7 +1011,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
         },
         {
           id: 'nutrition-review',
-          label: 'Nutrition review',
+          label: 'Delivery planning',
           chips: [
             {
               id: 'nutrition-1',
@@ -1045,9 +1022,16 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
             },
           ],
         },
+      ],
+    },
+    {
+      condition: TIMELINE_CONDITION_DETAILS['elevated-blood-pressure'],
+      id: 'elevated-blood-pressure',
+      label: 'Elevated Blood Pressure Without Diagnosis of Hypertension',
+      rows: [
         {
           id: 'growth-ultrasound',
-          label: 'Growth ultrasound',
+          label: 'Home blood pressure monitoring',
           chips: [
             {
               id: 'growth-1',
@@ -1058,9 +1042,126 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
             },
           ],
         },
+        {
+          id: 'hypertension-monitoring-task',
+          label: 'Screening pre-eclampsia labs',
+          chips: [
+            {
+              id: 'hypertension-monitoring-chip',
+              label: 'Blood pressure review',
+              status: 'completed',
+              startWeek: 8,
+              endWeek: 13,
+            },
+          ],
+        },
       ],
     },
-    ...ADDITIONAL_TIMELINE_GROUPS,
+    {
+      condition: TIMELINE_CONDITION_DETAILS['advanced-maternal-age'],
+      id: 'advanced-maternal-age',
+      label: 'Advanced Maternal Age',
+      rows: [
+        {
+          id: 'medication-management-task',
+          label: 'Counseling',
+          chips: [
+            {
+              id: 'medication-management-chip',
+              label: 'Medication reconciliation',
+              status: 'not-reviewed',
+              startWeek: 12,
+              endWeek: 17,
+            },
+          ],
+        },
+        {
+          id: 'fetal-surveillance-task',
+          label: 'Ultrasounds',
+          chips: [
+            {
+              id: 'fetal-surveillance-chip',
+              label: 'Non-stress testing',
+              status: 'ordered',
+              startWeek: 16,
+              endWeek: 21,
+            },
+          ],
+        },
+        {
+          id: 'nutrition-lifestyle-task',
+          label: 'Antenatal surveillance',
+          chips: [
+            {
+              id: 'nutrition-lifestyle-chip',
+              label: 'Nutrition counseling',
+              status: 'due-soon',
+              startWeek: 20,
+              endWeek: 25,
+            },
+          ],
+        },
+      ],
+    },
+    {
+      condition: TIMELINE_CONDITION_DETAILS['gestational-hypertension'],
+      id: 'gestational-hypertension',
+      label: 'Gestational Hypertension without Proteinuria',
+      rows: [
+        {
+          id: 'laboratory-follow-up-task',
+          label: 'Home blood pressure monitoring',
+          chips: [
+            {
+              id: 'laboratory-follow-up-chip',
+              label: 'Repeat laboratory panel',
+              status: 'late',
+              startWeek: 24,
+              endWeek: 29,
+            },
+          ],
+        },
+        {
+          id: 'delivery-planning-task',
+          label: 'Screening pre-eclampsia labs',
+          chips: [
+            {
+              id: 'delivery-planning-chip',
+              label: 'Delivery readiness review',
+              status: 'incomplete',
+              startWeek: 28,
+              endWeek: 33,
+            },
+          ],
+        },
+        {
+          id: 'postpartum-planning-task',
+          label: 'Growth Ultrasound',
+          chips: [
+            {
+              id: 'postpartum-planning-chip',
+              label: 'Postpartum care plan',
+              status: 'future',
+              startWeek: 32,
+              endWeek: 37,
+            },
+          ],
+        },
+        {
+          id: 'patient-education-task',
+          label: 'Antenatal surveillance',
+          chips: [
+            {
+              id: 'patient-education-chip',
+              label: 'Pregnancy education',
+              status: 'completed',
+              startWeek: 11,
+              endWeek: 16,
+            },
+          ],
+        },
+      ],
+    },
   ],
 };
 

@@ -1416,63 +1416,71 @@
                 (cdkDragStarted)="hideTimelineGroupTooltip()"
               >
                 <div class="problem-timeline__group-header">
-                  <button
-                    class="problem-timeline__group-drag-handle"
-                    type="button"
-                    cdkDragHandle
-                    [disabled]="group.resolved"
-                    [cdkDragHandleDisabled]="group.resolved"
-                    [attr.aria-label]="'Reorder ' + group.label + '. Use up and down arrow keys.'"
-                    [attr.title]="'Drag to reorder ' + group.label"
-                    (keydown)="moveTimelineGroupWithKeyboard($event, groupIndex)"
-                  >
-                    <img
-                      class="problem-timeline__group-drag-icon"
-                      src="assets/timeline-drag.svg"
-                      alt=""
-                      aria-hidden="true"
-                      draggable="false"
-                    />
-                  </button>
-                  <button
-                    class="problem-timeline__group-toggle"
-                    type="button"
-                    [attr.aria-expanded]="isTimelineGroupExpanded(group.id)"
-                    [attr.aria-label]="group.label + (group.resolved ? ', resolved' : '')"
-                    [attr.aria-controls]="'timeline-group-' + group.id"
-                    [attr.aria-describedby]="
-                      activeTimelineGroupTooltip()?.id === group.id
-                        ? 'timeline-condition-tooltip'
-                        : null
-                    "
-                    (mouseenter)="showTimelineGroupTooltip(group, $event)"
-                    (mouseleave)="scheduleTimelineGroupTooltipHide()"
-                    (focusin)="showTimelineGroupTooltip(group, $event)"
-                    (focusout)="scheduleTimelineGroupTooltipHide()"
-                    (click)="toggleTimelineGroup(group.id)"
-                  >
-                    <img
-                      class="problem-timeline__group-icon"
-                      [src]="
-                        isTimelineGroupExpanded(group.id)
-                          ? 'assets/timeline-routine.svg'
-                          : 'assets/timeline-gdm.svg'
+                  <div class="problem-timeline__group-heading">
+                    <button
+                      class="problem-timeline__group-drag-handle"
+                      type="button"
+                      cdkDragHandle
+                      [disabled]="group.resolved"
+                      [cdkDragHandleDisabled]="group.resolved"
+                      [attr.aria-label]="'Reorder ' + group.label + '. Use up and down arrow keys.'"
+                      [attr.title]="'Drag to reorder ' + group.label"
+                      (keydown)="moveTimelineGroupWithKeyboard($event, groupIndex)"
+                    >
+                      <img
+                        class="problem-timeline__group-drag-icon"
+                        src="assets/timeline-drag.svg"
+                        alt=""
+                        aria-hidden="true"
+                        draggable="false"
+                      />
+                    </button>
+                    <button
+                      class="problem-timeline__group-toggle"
+                      type="button"
+                      [attr.aria-expanded]="isTimelineGroupExpanded(group.id)"
+                      [attr.aria-label]="group.label + (group.resolved ? ', resolved' : '')"
+                      [attr.aria-controls]="'timeline-group-' + group.id"
+                      [attr.aria-describedby]="
+                        activeTimelineGroupTooltip()?.id === group.id
+                          ? 'timeline-condition-tooltip'
+                          : null
                       "
-                      alt=""
-                      aria-hidden="true"
-                    />
-                    <strong>{{ group.label }}</strong>
-                  </button>
+                      (mouseenter)="showTimelineGroupTooltip(group, $event)"
+                      (mouseleave)="scheduleTimelineGroupTooltipHide()"
+                      (focusin)="showTimelineGroupTooltip(group, $event)"
+                      (focusout)="scheduleTimelineGroupTooltipHide()"
+                      (click)="toggleTimelineGroup(group.id)"
+                    >
+                      <img
+                        class="problem-timeline__group-icon"
+                        [src]="
+                          isTimelineGroupExpanded(group.id)
+                            ? 'assets/timeline-routine.svg'
+                            : 'assets/timeline-gdm.svg'
+                        "
+                        alt=""
+                        aria-hidden="true"
+                      />
+                      <strong
+                        [matTooltip]="group.label"
+                        matTooltipClass="problem-name-tooltip"
+                        matTooltipPosition="above"
+                        [matTooltipShowDelay]="250"
+                        >{{ group.label }}</strong
+                      >
+                    </button>
 
-                  <button
-                    class="problem-timeline__group-add"
-                    type="button"
-                    title="Add timeline item"
-                    [attr.aria-label]="'Add timeline item to ' + group.label"
-                    (click)="openTimelineItemDialog(group.id)"
-                  >
-                    <img src="assets/problem-dialog/plus.svg" alt="" aria-hidden="true" />
-                  </button>
+                    <button
+                      class="problem-timeline__group-add"
+                      type="button"
+                      title="Add timeline item"
+                      [attr.aria-label]="'Add timeline item to ' + group.label"
+                      (click)="openTimelineItemDialog(group.id)"
+                    >
+                      <img src="assets/problem-dialog/plus.svg" alt="" aria-hidden="true" />
+                    </button>
+                  </div>
                 </div>
 
                 <div
@@ -2671,7 +2679,14 @@
           </footer>
         } @else {
           <header class="timeline-condition-tooltip__header">
-            <h2>{{ group.label }}</h2>
+            <h2
+              [matTooltip]="group.label"
+              matTooltipClass="problem-name-tooltip"
+              matTooltipPosition="above"
+              [matTooltipShowDelay]="250"
+            >
+              {{ group.label }}
+            </h2>
             <button
               type="button"
               [attr.aria-label]="'Close ' + group.label + ' details'"

@@ -33,25 +33,53 @@ describe('PatientDashboard timeline', () => {
     expect(fixture.nativeElement.querySelector('.patient-summary')).toBeNull();
   });
 
-  it('starts with five of ten groups expanded and toggles each group independently', () => {
+  it('starts with all four configured problem groups expanded and toggles each independently', () => {
     const dashboard = new PatientDashboard();
     const groups = dashboard.pregnancyTimeline().groups;
 
-    expect(groups).toHaveLength(10);
-    expect(groups.slice(0, 5).every((group) => dashboard.isTimelineGroupExpanded(group.id))).toBe(
-      true,
-    );
-    expect(groups.slice(5).every((group) => !dashboard.isTimelineGroupExpanded(group.id))).toBe(
-      true,
-    );
+    expect(groups).toHaveLength(4);
+    expect(groups.every((group) => dashboard.isTimelineGroupExpanded(group.id))).toBe(true);
 
-    dashboard.toggleTimelineGroup(groups[5].id);
-    expect(dashboard.isTimelineGroupExpanded(groups[5].id)).toBe(true);
+    dashboard.toggleTimelineGroup(groups[3].id);
+    expect(dashboard.isTimelineGroupExpanded(groups[3].id)).toBe(false);
     expect(dashboard.isTimelineGroupExpanded(groups[0].id)).toBe(true);
 
     dashboard.toggleTimelineGroup(groups[0].id);
     expect(dashboard.isTimelineGroupExpanded(groups[0].id)).toBe(false);
-    expect(dashboard.isTimelineGroupExpanded(groups[5].id)).toBe(true);
+    expect(dashboard.isTimelineGroupExpanded(groups[3].id)).toBe(false);
+  });
+
+  it('uses the configured problem names and category labels without changing task chips', () => {
+    const dashboard = new PatientDashboard();
+    const groups = dashboard.pregnancyTimeline().groups;
+
+    expect(groups.map((group) => group.label)).toEqual([
+      'Routine Prenatal Care',
+      'Elevated Blood Pressure Without Diagnosis of Hypertension',
+      'Advanced Maternal Age',
+      'Gestational Hypertension without Proteinuria',
+    ]);
+    expect(groups.map((group) => group.rows.map((row) => row.label))).toEqual([
+      [
+        'Routine Labs',
+        'Routine Ultrasounds',
+        'Aneuploidy screening',
+        'Genetic screening',
+        'Counseling',
+        'Social/Behavioral Screening',
+        'Immunizations',
+        'Delivery planning',
+      ],
+      ['Home blood pressure monitoring', 'Screening pre-eclampsia labs'],
+      ['Counseling', 'Ultrasounds', 'Antenatal surveillance'],
+      [
+        'Home blood pressure monitoring',
+        'Screening pre-eclampsia labs',
+        'Growth Ultrasound',
+        'Antenatal surveillance',
+      ],
+    ]);
+    expect(groups.flatMap((group) => group.rows).flatMap((row) => row.chips)).toHaveLength(21);
   });
 
   it('reorders timeline groups by drag and keyboard and keeps each change undoable', () => {
@@ -145,16 +173,16 @@ describe('PatientDashboard timeline', () => {
       Object.values(dialogComponent.categoryForm.controls).every((control) => control.enabled),
     ).toBe(true);
 
-    dialogComponent.categoryForm.controls.name.setValue(' labs ');
+    dialogComponent.categoryForm.controls.name.setValue(' routine labs ');
     dialogComponent.submit();
     fixture.detectChanges();
 
-    expect(dialogComponent.duplicateCategoryName()).toBe('Labs');
+    expect(dialogComponent.duplicateCategoryName()).toBe('Routine Labs');
     expect(
       dialog.openDialogs[0].componentRef?.location.nativeElement.querySelector(
         '.timeline-item-dialog__duplicate-error',
       )?.textContent,
-    ).toContain('A category named "Labs" already exists under this problem.');
+    ).toContain('A category named "Routine Labs" already exists under this problem.');
 
     dialogComponent.setMode('medication');
     expect(dialogComponent.mode()).toBe('medication');
@@ -2025,44 +2053,19 @@ describe('PatientDashboard timeline', () => {
     expect(recommendation()).toBeNull();
   });
 
-  it('replaces the summary recommendation with its added-to-problem-list status', () => {
+  it('does not recommend Advanced Maternal Age when it is already on the problem list', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
     fixture.detectChanges();
 
     const recommendation = fixture.nativeElement.querySelector(
       '.patient-summary__recommendation',
-    ) as HTMLElement;
-    const addButton = recommendation.querySelector(
-      '.patient-summary__recommendation-add',
-    ) as HTMLButtonElement;
+    ) as HTMLElement | null;
 
-    expect(recommendation.textContent).toContain('Add Advanced Maternal Age to Problem List.');
-    expect(recommendation.textContent).toContain(
-      'Recommend low-dose aspirin (81 mg/day) starting before 16 weeks gestation.',
-    );
-
-    addButton.click();
-    fixture.detectChanges();
-
-    expect(dashboard.summaryRecommendedProblemState()).toBe('added');
+    expect(recommendation).toBeNull();
     expect(
       dashboard.pregnancyTimeline().groups.some((group) => group.label === 'Advanced Maternal Age'),
     ).toBe(true);
-    expect(
-      dashboard.suggestedProblems().some((problem) => problem.name === 'Advanced Maternal Age'),
-    ).toBe(false);
-    expect(recommendation.querySelector('[role="status"]')?.textContent?.trim()).toBe(
-      'Advanced Maternal Age added to Problem List',
-    );
-    expect(
-      recommendation.querySelector('.patient-summary__recommendation-link')?.getAttribute('href'),
-    ).toBe('#problem-timeline');
-    expect(fixture.nativeElement.querySelector('#problem-timeline')).toBeTruthy();
-    expect(recommendation.querySelector('.patient-summary__recommendation-add')).toBeNull();
-    expect(recommendation.textContent).toContain(
-      'Recommend low-dose aspirin (81 mg/day) starting before 16 weeks gestation.',
-    );
   });
 
   it('renders each pre-eclampsia risk summary variant', () => {
