@@ -1290,6 +1290,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     { label: 'Type 1 or Type 2 diabetes', selected: false },
     { label: 'Chronic hypertension', selected: false },
   ];
+  readonly selectedHighRiskFactorCount = signal(0);
   readonly moderateRiskFactors: PreEclampsiaRiskFactor[] = [
     { label: 'First pregnancy (nulliparity)', selected: false },
     { label: 'Obesity (BMI >30 kg/m²)', selected: false },
@@ -1297,6 +1298,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     { label: 'Multiple gestation', selected: false },
     { label: 'Maternal age ≥35 years', selected: false },
   ];
+  readonly selectedModerateRiskFactorCount = signal(0);
   readonly vitalChartHover = signal<VitalChartHover | null>(null);
   readonly vitalCounts = signal<VitalCountValues>({
     bmi: 0,
@@ -1648,6 +1650,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   updateRiskFactorSelection(factor: PreEclampsiaRiskFactor, selected: boolean): void {
     factor.selected = selected;
+    this.selectedHighRiskFactorCount.set(this.selectedRiskFactorCount(this.highRiskFactors));
+    this.selectedModerateRiskFactorCount.set(
+      this.selectedRiskFactorCount(this.moderateRiskFactors),
+    );
 
     if (this.highRiskFactors.some((riskFactor) => riskFactor.selected)) {
       this.preEclampsiaRiskStatus.set('high');

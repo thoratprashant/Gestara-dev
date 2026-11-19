@@ -399,100 +399,108 @@
             </button>
           </header>
 
-          <section class="risk-assessment-tooltip__banner" aria-label="Risk summary">
-            <span class="risk-assessment-tooltip__warning-icon">
-              <img src="assets/risk-assessment/asset-2.svg" alt="" aria-hidden="true" />
-            </span>
-            <div>
-              <strong>High Risk Detected (1 High Factor)</strong>
-              <!-- <p>Daily low-dose aspirin (81-150 mg) is recommended starting from 12-16 weeks.</p> -->
-            </div>
-          </section>
-
-          <div class="risk-assessment-tooltip__body">
-            <section
-              class="risk-assessment-tooltip__recommendation"
-              aria-labelledby="recommended-problem-title"
-            >
-              <header class="risk-assessment-tooltip__recommendation-header">
-                <span class="risk-assessment-tooltip__recommendation-icon" aria-hidden="true"
-                  >+</span
-                >
-                <span>
-                  <h3 id="recommended-problem-title">Recommended problem / medicine</h3>
-                  <p>Eligible because at least 1 high risk factor is selected.</p>
-                </span>
-              </header>
-
-              <div class="risk-assessment-tooltip__recommended-problem">
-                <span>
-                  <strong>High risk for preeclampsia</strong>
-                  <small>No ICD-10 code. Does not sync with Epic.</small>
-                </span>
-
-                @switch (recommendedProblemState()) {
-                  @case ('pending') {
-                    <span class="risk-assessment-tooltip__recommendation-actions">
-                      <button type="button" (click)="dismissRecommendedProblem()">Dismiss</button>
-                      <button type="button" (click)="addRecommendedProblem()">Add</button>
-                    </span>
-                  }
-                  @case ('added') {
-                    <span
-                      class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--added"
-                      role="status"
-                    >
-                      <span aria-hidden="true">&#10003;</span> Added to Problem List
-                    </span>
-                  }
-                  @case ('dismissed') {
-                    <span
-                      class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--dismissed"
-                      role="status"
-                    >
-                      <span aria-hidden="true">&times;</span> Dismissed Problem
-                    </span>
-                  }
-                }
-              </div>
-
-              <div class="risk-assessment-tooltip__recommended-problem">
-                <span>
-                  <strong>Daily low-dose aspirin</strong>
-                  <small>(81-162 mg). 12-16 weeks.</small>
-                </span>
-
-                @switch (recommendedMedicineState()) {
-                  @case ('pending') {
-                    <span class="risk-assessment-tooltip__recommendation-actions">
-                      <button type="button" (click)="dismissRecommendedMedicine()">Dismiss</button>
-                      <button type="button" (click)="addRecommendedMedicine()">Add</button>
-                    </span>
-                  }
-                  @case ('added') {
-                    <span
-                      class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--added"
-                      role="status"
-                    >
-                      <span aria-hidden="true">&#10003;</span> Added to Problem List
-                    </span>
-                  }
-                  @case ('dismissed') {
-                    <span
-                      class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--dismissed"
-                      role="status"
-                    >
-                      <span aria-hidden="true">&times;</span> Dismissed Medicine
-                    </span>
-                  }
-                }
+          @if (selectedHighRiskFactorCount(); as highRiskFactorCount) {
+            <section class="risk-assessment-tooltip__banner" aria-label="Risk summary">
+              <span class="risk-assessment-tooltip__warning-icon">
+                <img src="assets/risk-assessment/asset-2.svg" alt="" aria-hidden="true" />
+              </span>
+              <div>
+                <strong>
+                  High Risk Detected ({{ highRiskFactorCount }} High
+                  {{ highRiskFactorCount === 1 ? 'Factor' : 'Factors' }})
+                </strong>
               </div>
             </section>
+          }
+
+          <div class="risk-assessment-tooltip__body">
+            @if (selectedHighRiskFactorCount() > 0) {
+              <section
+                class="risk-assessment-tooltip__recommendation"
+                aria-labelledby="recommended-problem-title"
+              >
+                <header class="risk-assessment-tooltip__recommendation-header">
+                  <span class="risk-assessment-tooltip__recommendation-icon" aria-hidden="true"
+                    >+</span
+                  >
+                  <span>
+                    <h3 id="recommended-problem-title">Recommended problem / medicine</h3>
+                    <p>Eligible because at least 1 high risk factor is selected.</p>
+                  </span>
+                </header>
+
+                <div class="risk-assessment-tooltip__recommended-problem">
+                  <span>
+                    <strong>High risk for preeclampsia</strong>
+                    <small>No ICD-10 code. Does not sync with Epic.</small>
+                  </span>
+
+                  @switch (recommendedProblemState()) {
+                    @case ('pending') {
+                      <span class="risk-assessment-tooltip__recommendation-actions">
+                        <button type="button" (click)="dismissRecommendedProblem()">Dismiss</button>
+                        <button type="button" (click)="addRecommendedProblem()">Add</button>
+                      </span>
+                    }
+                    @case ('added') {
+                      <span
+                        class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--added"
+                        role="status"
+                      >
+                        <span aria-hidden="true">&#10003;</span> Added to Problem List
+                      </span>
+                    }
+                    @case ('dismissed') {
+                      <span
+                        class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--dismissed"
+                        role="status"
+                      >
+                        <span aria-hidden="true">&times;</span> Dismissed Problem
+                      </span>
+                    }
+                  }
+                </div>
+
+                <div class="risk-assessment-tooltip__recommended-problem">
+                  <span>
+                    <strong>Daily low-dose aspirin</strong>
+                    <small>(81-162 mg). 12-16 weeks.</small>
+                  </span>
+
+                  @switch (recommendedMedicineState()) {
+                    @case ('pending') {
+                      <span class="risk-assessment-tooltip__recommendation-actions">
+                        <button type="button" (click)="dismissRecommendedMedicine()">
+                          Dismiss
+                        </button>
+                        <button type="button" (click)="addRecommendedMedicine()">Add</button>
+                      </span>
+                    }
+                    @case ('added') {
+                      <span
+                        class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--added"
+                        role="status"
+                      >
+                        <span aria-hidden="true">&#10003;</span> Added to Problem List
+                      </span>
+                    }
+                    @case ('dismissed') {
+                      <span
+                        class="risk-assessment-tooltip__recommendation-status risk-assessment-tooltip__recommendation-status--dismissed"
+                        role="status"
+                      >
+                        <span aria-hidden="true">&times;</span> Dismissed Medicine
+                      </span>
+                    }
+                  }
+                </div>
+              </section>
+            }
 
             <fieldset
               class="risk-assessment-tooltip__factors risk-assessment-tooltip__factors--high"
             >
-              <legend>High Risk Factors ({{ selectedRiskFactorCount(highRiskFactors) }})</legend>
+              <legend>High Risk Factors ({{ selectedHighRiskFactorCount() }})</legend>
               <div>
                 @for (factor of highRiskFactors; track factor.label) {
                   <label>
@@ -520,9 +528,7 @@
             <fieldset
               class="risk-assessment-tooltip__factors risk-assessment-tooltip__factors--moderate"
             >
-              <legend>
-                Moderate Risk Factors ({{ selectedRiskFactorCount(moderateRiskFactors) }})
-              </legend>
+              <legend>Moderate Risk Factors ({{ selectedModerateRiskFactorCount() }})</legend>
               <div>
                 @for (factor of moderateRiskFactors; track factor.label) {
                   <label>

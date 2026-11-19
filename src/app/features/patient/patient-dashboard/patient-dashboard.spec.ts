@@ -1988,6 +1988,43 @@ describe('PatientDashboard timeline', () => {
     vi.useRealTimers();
   });
 
+  it('shows the high-risk summary and recommendations only for selected high-risk factors', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    dashboard.riskAssessmentOpen.set(true);
+    fixture.detectChanges();
+
+    const banner = () =>
+      fixture.nativeElement.querySelector('.risk-assessment-tooltip__banner') as HTMLElement | null;
+    const recommendation = () =>
+      fixture.nativeElement.querySelector(
+        '.risk-assessment-tooltip__recommendation',
+      ) as HTMLElement | null;
+
+    expect(banner()).toBeNull();
+    expect(recommendation()).toBeNull();
+
+    dashboard.updateRiskFactorSelection(dashboard.moderateRiskFactors[0], true);
+    fixture.detectChanges();
+    expect(banner()).toBeNull();
+    expect(recommendation()).toBeNull();
+
+    dashboard.updateRiskFactorSelection(dashboard.highRiskFactors[0], true);
+    fixture.detectChanges();
+    expect(banner()?.textContent).toContain('High Risk Detected (1 High Factor)');
+    expect(recommendation()).toBeTruthy();
+
+    dashboard.updateRiskFactorSelection(dashboard.highRiskFactors[1], true);
+    fixture.detectChanges();
+    expect(banner()?.textContent).toContain('High Risk Detected (2 High Factors)');
+
+    dashboard.updateRiskFactorSelection(dashboard.highRiskFactors[0], false);
+    dashboard.updateRiskFactorSelection(dashboard.highRiskFactors[1], false);
+    fixture.detectChanges();
+    expect(banner()).toBeNull();
+    expect(recommendation()).toBeNull();
+  });
+
   it('replaces the summary recommendation with its added-to-problem-list status', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
