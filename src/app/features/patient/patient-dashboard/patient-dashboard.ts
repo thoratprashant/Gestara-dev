@@ -97,6 +97,7 @@ interface VitalTooltipPosition {
 interface TimelineGroupTooltipPosition {
   bottom: number | null;
   left: number;
+  placement: 'above' | 'below';
   top: number | null;
   width: number;
 }
@@ -1240,6 +1241,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly timelineGroupTooltipPosition = signal<TimelineGroupTooltipPosition>({
     bottom: null,
     left: 0,
+    placement: 'below',
     top: 0,
     width: 350,
   });
@@ -1263,9 +1265,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     width: 300,
   });
   readonly deliveryChipTooltipMaxHeight = signal(460);
-  readonly deliveryChipIndication = signal(
-    'Advanced maternal age',
-  );
+  readonly deliveryChipIndication = signal('Advanced maternal age');
   readonly deliveryChipNotes = signal(
     'MFM consult 4/11; agrees with 39w induction pending BP control.',
   );
@@ -1319,7 +1319,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       detailLabel: 'BP:',
       detailValue: '148/92',
       detailReference: '(140/90)',
-    }
+    },
   ]);
   readonly declinedProblems = signal<readonly SuggestedProblem[]>([
     {
@@ -1893,24 +1893,8 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       return;
     }
 
-    const triggerBounds = trigger.getBoundingClientRect();
-    const iconBounds = trigger
-      .querySelector<HTMLElement>('.problem-timeline__group-icon')
-      ?.getBoundingClientRect();
-    const width = Math.min(350, Math.max(window.innerWidth - 24, 280));
-    const preferredHeight = 360;
-    const verticalPosition = this.viewportTooltipVerticalPosition(triggerBounds, preferredHeight);
-    const tooltipLeftMargin = 15;
-    const maximumLeft = Math.max(12, window.innerWidth - width - 12 - tooltipLeftMargin);
-
-    this.timelineGroupTooltipPosition.set({
-      bottom: verticalPosition.bottom,
-      left: this.clamp(iconBounds?.left ?? triggerBounds.left, 12, maximumLeft),
-      top: verticalPosition.top,
-      width,
-    });
-    this.timelineGroupTooltipMaxHeight.set(verticalPosition.maxHeight);
     this.timelineGroupTooltipTrigger = trigger;
+    this.positionTimelineGroupTooltip(360);
     this.activeTimelineGroupTooltip.set(group);
   }
 
@@ -1932,7 +1916,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.timelineGroupTooltipHideTimer = window.setTimeout(() => {
       this.activeTimelineGroupTooltip.set(null);
       this.timelineGroupTooltipHideTimer = null;
-    }, 180);
+    }, 400);
   }
 
   keepTimelineGroupTooltipOpen(): void {
@@ -1940,22 +1924,37 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   private resizeTimelineGroupTooltipForConfirmation(preferredHeight: number): void {
+    this.positionTimelineGroupTooltip(preferredHeight);
+  }
+
+  private positionTimelineGroupTooltip(preferredHeight: number): void {
     const trigger = this.timelineGroupTooltipTrigger;
 
     if (!trigger) {
       return;
     }
 
+    const viewportGap = 12;
     const triggerBounds = trigger.getBoundingClientRect();
-    const verticalPosition = this.viewportTooltipVerticalPosition(triggerBounds, preferredHeight);
-    const position = this.timelineGroupTooltipPosition();
+    const iconBounds = trigger
+      .querySelector<HTMLElement>('.problem-timeline__group-icon')
+      ?.getBoundingClientRect();
+    const width = Math.min(350, Math.max(0, window.innerWidth - viewportGap * 2));
+    const maximumLeft = Math.max(viewportGap, window.innerWidth - width - viewportGap);
+    const verticalPosition = this.viewportTooltipVerticalPosition(
+      triggerBounds,
+      preferredHeight,
+      4,
+    );
 
-    this.timelineGroupTooltipMaxHeight.set(verticalPosition.maxHeight);
     this.timelineGroupTooltipPosition.set({
-      ...position,
       bottom: verticalPosition.bottom,
+      left: this.clamp(iconBounds?.left ?? triggerBounds.left, viewportGap, maximumLeft),
+      placement: verticalPosition.placement,
       top: verticalPosition.top,
+      width,
     });
+    this.timelineGroupTooltipMaxHeight.set(verticalPosition.maxHeight);
   }
 
   timelineStatusTooltipNoteRows(note: string): number {
@@ -3447,6 +3446,16 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }
   }
 
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (!this.activeTimelineGroupTooltip()) {
+      return;
+    }
+
+    const preferredHeight = this.timelineProblemPendingResolution() ? 400 : 360;
+    this.positionTimelineGroupTooltip(preferredHeight);
+  }
+
   private headerOffset(): number {
     return window.innerWidth < 992 ? 64 : 78;
   }
@@ -3629,6 +3638,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   private viewportTooltipVerticalPosition(
     triggerBounds: DOMRect,
     preferredHeight: number,
+    triggerGap = 8,
   ): {
     bottom: number | null;
     maxHeight: number;
@@ -3636,7 +3646,6 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     top: number | null;
   } {
     const viewportGap = 12;
-    const triggerGap = 8;
     const spaceBelow = Math.max(0, window.innerHeight - triggerBounds.bottom - viewportGap);
     const spaceAbove = Math.max(0, triggerBounds.top - viewportGap);
     const openBelow = spaceBelow >= preferredHeight || spaceBelow >= spaceAbove;

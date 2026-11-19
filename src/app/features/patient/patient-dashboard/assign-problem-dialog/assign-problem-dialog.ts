@@ -23,9 +23,9 @@ export class AssignProblemDialog {
   private readonly dialogData = inject<AssignProblemDialogData>(MAT_DIALOG_DATA);
 
   readonly problemOptions: SuggestiveOption[] = [
-    { value: 'Thyroid function', label: 'Endocrine assessment' },
-    { value: 'Vitamin D deficiency', label: 'Nutritional deficiency' },
-    { value: 'Iron deficiency anemia', label: 'Hematologic condition' },
+    { value: 'Thyroid function', label: 'Endocrine assessment', code: 'R94.6' },
+    { value: 'Vitamin D deficiency', label: 'Nutritional deficiency', code: 'E55.9' },
+    { value: 'Iron deficiency anemia', label: 'Hematologic condition', code: 'D50.9' },
   ];
   readonly categoryOptions: SuggestiveOption[] = [
     { value: 'Endocrine', label: 'Hormonal and metabolic disorders' },

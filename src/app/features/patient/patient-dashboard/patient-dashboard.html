@@ -2569,6 +2569,7 @@
         [style.top.px]="timelineGroupTooltipPosition().top"
         [style.width.px]="timelineGroupTooltipPosition().width"
         [style.max-height.px]="timelineGroupTooltipMaxHeight()"
+        [attr.data-placement]="timelineGroupTooltipPosition().placement"
         (mouseenter)="keepTimelineGroupTooltipOpen()"
         (mouseleave)="scheduleTimelineGroupTooltipHide()"
         (focusin)="keepTimelineGroupTooltipOpen()"

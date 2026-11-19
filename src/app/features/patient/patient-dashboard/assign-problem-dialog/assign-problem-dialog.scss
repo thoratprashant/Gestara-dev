@@ -83,6 +83,29 @@
   width: 100%;
 }
 
+.assign-problem-dialog__problem-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.assign-problem-dialog__problem-details {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assign-problem-dialog__icd-code {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  color: #4b5563;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
 .assign-problem-dialog__footer {
   min-height: 0;
   padding: 15.795px 21.059px;

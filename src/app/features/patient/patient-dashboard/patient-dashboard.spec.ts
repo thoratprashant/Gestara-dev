@@ -618,6 +618,9 @@ describe('PatientDashboard timeline', () => {
     expect(problemSuggestions).toHaveLength(1);
     expect(problemSuggestions.item(0).textContent).toContain('Vitamin D deficiency');
     expect(problemSuggestions.item(0).textContent).toContain('Nutritional deficiency');
+    expect(
+      problemSuggestions.item(0).querySelector('.assign-problem-dialog__icd-code')?.textContent,
+    ).toContain('E55.9');
 
     (problemSuggestions.item(0) as HTMLButtonElement).click();
     fixture.detectChanges();
@@ -880,13 +883,72 @@ describe('PatientDashboard timeline', () => {
     dashboard.showTimelineGroupTooltip(group, { currentTarget: toggle } as unknown as Event);
 
     expect(dashboard.timelineGroupTooltipPosition()).toEqual({
-      bottom: 76,
+      bottom: 72,
       left: 140,
+      placement: 'above',
       top: null,
       width: 350,
     });
     expect(dashboard.timelineGroupTooltipMaxHeight()).toBe(360);
     expect(dashboard.tooltipGlassActive()).toBe(false);
+  });
+
+  it('keeps the condition tooltip inside narrow viewports', () => {
+    const viewportWidth = vi.spyOn(window, 'innerWidth', 'get').mockReturnValue(320);
+    const dashboard = new PatientDashboard();
+    const toggle = document.createElement('button');
+    const icon = document.createElement('img');
+    icon.className = 'problem-timeline__group-icon';
+    toggle.appendChild(icon);
+    vi.spyOn(toggle, 'getBoundingClientRect').mockReturnValue({
+      bottom: 240,
+      height: 40,
+      left: 270,
+      right: 320,
+      top: 200,
+      width: 50,
+    } as DOMRect);
+    vi.spyOn(icon, 'getBoundingClientRect').mockReturnValue({
+      bottom: 226,
+      height: 14,
+      left: 286,
+      right: 300,
+      top: 212,
+      width: 14,
+    } as DOMRect);
+
+    dashboard.showTimelineGroupTooltip(dashboard.pregnancyTimeline().groups[0], {
+      currentTarget: toggle,
+    } as unknown as Event);
+    dashboard.onWindowResize();
+
+    expect(dashboard.timelineGroupTooltipPosition()).toMatchObject({
+      left: 12,
+      width: 296,
+    });
+    viewportWidth.mockRestore();
+  });
+
+  it('keeps the condition tooltip open while the pointer moves from its trigger', () => {
+    vi.useFakeTimers();
+
+    try {
+      const dashboard = new PatientDashboard();
+      const toggle = document.createElement('button');
+      const group = dashboard.pregnancyTimeline().groups[0];
+
+      dashboard.showTimelineGroupTooltip(group, {
+        currentTarget: toggle,
+      } as unknown as Event);
+      dashboard.scheduleTimelineGroupTooltipHide();
+      vi.advanceTimersByTime(250);
+      dashboard.keepTimelineGroupTooltipOpen();
+      vi.advanceTimersByTime(400);
+
+      expect(dashboard.activeTimelineGroupTooltip()).toBe(group);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('adds a submitted problem as an expandable timeline group with undo support', () => {
@@ -1493,7 +1555,9 @@ describe('PatientDashboard timeline', () => {
     ]);
     expect(
       Array.from(
-        orderPicker.querySelectorAll('.order-picker__category-heading .problem-review__problem-title'),
+        orderPicker.querySelectorAll(
+          '.order-picker__category-heading .problem-review__problem-title',
+        ),
         (badge: unknown) => (badge as HTMLElement).textContent?.trim(),
       ),
     ).toEqual(['ICD-10 Z34.83', 'ICD-10 R03.0', 'ICD-10 O13.3']);

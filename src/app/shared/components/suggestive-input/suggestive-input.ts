@@ -16,6 +16,7 @@ export interface SuggestiveOption {
   value: string;
   label: string;
   description?: string;
+  code?: string;
 }
 
 @Component({
@@ -204,7 +205,9 @@ export class SuggestiveInput implements ControlValueAccessor, OnDestroy {
         return true;
       }
 
-      return `${option.value} ${option.label}`.toLocaleLowerCase().includes(query);
+      return `${option.value} ${option.label} ${option.code ?? ''}`
+        .toLocaleLowerCase()
+        .includes(query);
     });
   }
 

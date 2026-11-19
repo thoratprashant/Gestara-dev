@@ -29,7 +29,17 @@
           formControlName="problem"
           placeholder="Type or select a problem..."
           [options]="problemOptions"
+          [optionTemplate]="problemOption"
         />
+        <ng-template #problemOption let-option>
+          <span class="assign-problem-dialog__problem-option">
+            <span class="assign-problem-dialog__problem-details">
+              <strong>{{ option.value }}</strong>
+              <span> - {{ option.label }}</span>
+            </span>
+            <span class="assign-problem-dialog__icd-code fw-semibold">{{ option.code }}</span>
+          </span>
+        </ng-template>
       </div>
 
       <div class="assign-problem-dialog__field d-flex flex-column align-items-start w-100">
