@@ -1320,7 +1320,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       detectionReason: 'BP: 148/92 (140/90)',
       detailLabel: 'BP:',
       detailValue: '148/92',
-      detailReference: '(140/90)',
+      detailReference: '(≥ 140/90)',
     },
   ]);
   readonly declinedProblems = signal<readonly SuggestedProblem[]>([
