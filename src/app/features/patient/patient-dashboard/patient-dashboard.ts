@@ -156,7 +156,7 @@ interface ResultTooltip {
   closeable?: boolean;
   footer: ReadonlyArray<{ color: string; message: string }>;
   id: string;
-  rows?: ResultTableRow[];
+  rows?: readonly ResultTableRow[];
   subtitle?: string;
   title: string;
   width: number;
@@ -178,7 +178,14 @@ interface VitalCountValues {
 }
 
 type TimelineStatus =
-  'completed' | 'not-reviewed' | 'ordered' | 'due-soon' | 'late' | 'incomplete' | 'future';
+  | 'completed'
+  | 'not-reviewed'
+  | 'ordered'
+  | 'due-soon'
+  | 'late'
+  | 'incomplete'
+  | 'future'
+  | 'declined';
 type ChipInteractionMode = 'move' | 'resize-start' | 'resize-end';
 type TimelineStatusTooltipIcon = 'calendar' | 'clock';
 type TimelineResultReviewState = 'added' | 'dismissed';
@@ -226,6 +233,7 @@ interface TimelineStatusTooltip {
   notesPlaceholder?: string;
   otherPlaceholder?: string;
   removedTests?: TimelineStatusTooltipTest[];
+  resultRows?: readonly ResultTableRow[];
   resultReviewStates?: Record<string, TimelineResultReviewState>;
   resultsReviewed?: boolean;
   resultsSubmitted?: boolean;
@@ -256,6 +264,8 @@ interface ActiveDueSoonTooltip {
   items: DueSoonChecklistItem[];
   notes: string;
   readOnly: boolean;
+  scheduledWeekRange: string;
+  title: string;
 }
 
 interface TimelineStatusTooltipPosition extends VitalTooltipPosition {
@@ -526,6 +536,23 @@ const VITAL_TOOLTIPS: VitalTooltip[] = [
   },
 ];
 
+const CBC_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'WBC', value: '9.2 K/uL', range: '(4.0 - 11.0)' },
+  { name: 'Hemoglobin', value: '11.2 g/dL', range: '(11.5 - 15.5)', alert: 'low' },
+  { name: 'Hematocrit', value: '34.0 %', range: '(34.0 - 45.0)' },
+  { name: 'Platelets', value: '245 K/uL', range: '(150 - 400)' },
+  { name: 'RBC', value: '3.8 M/uL', range: '(3.8 - 5.2)' },
+  { name: 'MCV', value: '88.0 fL', range: '(80.0 - 100.0)' },
+  { name: 'MCH', value: '29.0 pg', range: '(27.0 - 33.0)' },
+  { name: 'MCHC', value: '33.0 g/dL', range: '(32.0 - 36.0)' },
+  { name: 'RDW', value: '13.2 %', range: '(11.5 - 14.5)' },
+  { name: 'Neutrophils', value: '65.0 %', range: '(40.0 - 70.0)' },
+  { name: 'Lymphocytes', value: '28.0 %', range: '(20.0 - 40.0)' },
+  { name: 'Monocytes', value: '5.0 %', range: '(2.0 - 8.0)' },
+  { name: 'Eosinophils', value: '2.0 %', range: '(1.0 - 4.0)' },
+  { name: 'Basophils', value: '0.5 %', range: '(0.0 - 1.0)' },
+];
+
 const RESULT_TOOLTIPS: ResultTooltip[] = [
   {
     id: 'cbc',
@@ -533,22 +560,7 @@ const RESULT_TOOLTIPS: ResultTooltip[] = [
     width: 420,
     closeable: true,
     footer: [],
-    rows: [
-      { name: 'WBC', value: '9.2 K/uL', range: '(4.0 - 11.0)' },
-      { name: 'Hemoglobin', value: '11.2 g/dL', range: '(11.5 - 15.5)', alert: 'low' },
-      { name: 'Hematocrit', value: '34.0 %', range: '(34.0 - 45.0)' },
-      { name: 'Platelets', value: '245 K/uL', range: '(150 - 400)' },
-      { name: 'RBC', value: '3.8 M/uL', range: '(3.8 - 5.2)' },
-      { name: 'MCV', value: '88.0 fL', range: '(80.0 - 100.0)' },
-      { name: 'MCH', value: '29.0 pg', range: '(27.0 - 33.0)' },
-      { name: 'MCHC', value: '33.0 g/dL', range: '(32.0 - 36.0)' },
-      { name: 'RDW', value: '13.2 %', range: '(11.5 - 14.5)' },
-      { name: 'Neutrophils', value: '65.0 %', range: '(40.0 - 70.0)' },
-      { name: 'Lymphocytes', value: '28.0 %', range: '(20.0 - 40.0)' },
-      { name: 'Monocytes', value: '5.0 %', range: '(2.0 - 8.0)' },
-      { name: 'Eosinophils', value: '2.0 %', range: '(1.0 - 4.0)' },
-      { name: 'Basophils', value: '0.5 %', range: '(0.0 - 1.0)' },
-    ],
+    rows: CBC_RESULT_ROWS,
   },
   {
     id: 'home-bp',
@@ -821,6 +833,7 @@ const TIMELINE_STATUS_TOOLTIPS: Record<TimelineStatus, TimelineStatusTooltip> = 
       { icon: 'clock', label: 'Completed:', value: 'Week 12' },
       { icon: 'calendar', label: 'Date:', value: '2025-09-05' },
     ],
+    resultRows: CBC_RESULT_ROWS,
     status: 'completed',
     subtitle: 'Routine Prenatal Care',
     title: 'Aneuploidy screening',
@@ -839,13 +852,31 @@ const TIMELINE_STATUS_TOOLTIPS: Record<TimelineStatus, TimelineStatusTooltip> = 
     title: 'Aneuploidy screening',
   },
   future: {
-    badgeLabel: 'Incomplete',
+    badgeLabel: 'Future',
     notesPlaceholder:
       'Add clinical notes about ordered, declined, or previously tested genetic panel items...',
     otherPlaceholder: 'Enter test name...',
     schedule: [{ icon: 'calendar', label: 'Scheduled:', value: 'Week 0-13' }],
     showBulkActions: true,
     status: 'future',
+    submitLabel: 'Submit',
+    subtitle: 'Routine Prenatal Care',
+    tests: [
+      { label: 'White Blood Cells', showActions: true },
+      { label: 'Red Blood Cells', showActions: true },
+      { label: 'Platelets', showActions: true },
+      { label: 'Kidney Function', showActions: true },
+    ],
+    title: 'Carrier Screening Panel',
+  },
+  declined: {
+    badgeLabel: 'Declined',
+    notesPlaceholder:
+      'Add clinical notes about ordered, declined, or previously tested genetic panel items...',
+    otherPlaceholder: 'Enter test name...',
+    schedule: [{ icon: 'calendar', label: 'Scheduled:', value: 'Week 0-13' }],
+    showBulkActions: true,
+    status: 'declined',
     submitLabel: 'Submit',
     subtitle: 'Routine Prenatal Care',
     tests: [
@@ -889,7 +920,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
     startWeek: 39,
     endWeek: 40,
   },
-  maxWeek: 40,
+  maxWeek: 42,
   groups: [
     {
       condition: TIMELINE_CONDITION_DETAILS['routine-prenatal-care'],
@@ -902,38 +933,24 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           chips: [
             {
               id: 'labs-1',
-              label: 'Initial prenatal labs',
+              label: 'First trimester labs',
               status: 'completed',
-              startWeek: 11,
-              endWeek: 19,
+              startWeek: 0,
+              endWeek: 13,
             },
             {
               id: 'labs-2',
-              label: 'second trimester labs',
-              status: 'ordered',
-              startWeek: 20,
-              endWeek: 24,
+              label: 'Third trimester labs',
+              status: 'due-soon',
+              startWeek: 24,
+              endWeek: 30,
             },
             {
               id: 'labs-3',
-              label: 'Third trimester labs',
-              status: 'incomplete',
-              startWeek: 3,
-              endWeek: 10,
-            },
-            {
-              id: 'labs-4',
-              label: 'Final labs',
+              label: 'GBS',
               status: 'future',
               startWeek: 36,
-              endWeek: 40,
-            },
-            {
-              id: 'labs-5',
-              label: 'Final labs',
-              status: 'due-soon',
-              startWeek: 25,
-              endWeek: 30,
+              endWeek: 37,
             },
           ],
         },
@@ -943,10 +960,10 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           chips: [
             {
               id: 'aneuploidy-1',
-              label: 'Aneuploidy screening',
+              label: 'First trimester limited ultrasound',
               status: 'completed',
-              startWeek: 10,
-              endWeek: 14,
+              startWeek: 0,
+              endWeek: 13,
             },
           ],
         },
@@ -955,11 +972,18 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Aneuploidy screening',
           chips: [
             {
-              id: 'genetic-1',
-              label: 'Genetic screening',
-              status: 'late',
-              startWeek: 4,
-              endWeek: 12,
+              id: 'aneuploidy-cell-free-dna',
+              label: 'Cell free DNA',
+              status: 'completed',
+              startWeek: 10,
+              endWeek: 20,
+            },
+            {
+              id: 'aneuploidy-maternal-serum-afp',
+              label: 'Maternal serum AFP',
+              status: 'declined',
+              startWeek: 15,
+              endWeek: 22,
             },
           ],
         },
@@ -968,11 +992,11 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Genetic screening',
           chips: [
             {
-              id: 'anatomy-1',
-              label: 'Anatomy ultrasound',
+              id: 'genetic-screening-1',
+              label: 'Genetic screening',
               status: 'completed',
-              startWeek: 18,
-              endWeek: 22,
+              startWeek: 0,
+              endWeek: 13,
             },
           ],
         },
@@ -980,7 +1004,20 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           id: 'gbs-screening',
           label: 'Counseling',
           chips: [
-            { id: 'gbs-1', label: 'GBS screening', status: 'future', startWeek: 35, endWeek: 37 },
+            {
+              id: 'counseling-first-trimester',
+              label: 'First trimester counseling',
+              status: 'completed',
+              startWeek: 0,
+              endWeek: 13,
+            },
+            {
+              id: 'counseling-third-trimester',
+              label: 'Third Trimester counseling',
+              status: 'due-soon',
+              startWeek: 28,
+              endWeek: 32,
+            },
           ],
         },
         {
@@ -988,11 +1025,18 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Social/Behavioral Screening',
           chips: [
             {
-              id: 'glucose-1',
-              label: 'Glucose screening',
+              id: 'behavioral-screening-first-trimester',
+              label: 'First trimester screening',
+              status: 'incomplete',
+              startWeek: 0,
+              endWeek: 13,
+            },
+            {
+              id: 'behavioral-screening-third-trimester',
+              label: 'Third trimester screening',
               status: 'due-soon',
-              startWeek: 24,
-              endWeek: 28,
+              startWeek: 28,
+              endWeek: 32,
             },
           ],
         },
@@ -1001,11 +1045,25 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Immunizations',
           chips: [
             {
-              id: 'glucose-log-1',
-              label: 'Daily glucose monitoring',
+              id: 'immunization-influenza-covid',
+              label: 'influenza/COVID (Sept-April/May)',
               status: 'completed',
-              startWeek: 26,
-              endWeek: 30,
+              startWeek: 0,
+              endWeek: 13,
+            },
+            {
+              id: 'immunization-tdap',
+              label: 'TDaP',
+              status: 'due-soon',
+              startWeek: 27,
+              endWeek: 36,
+            },
+            {
+              id: 'immunization-rsv',
+              label: 'RSV',
+              status: 'future',
+              startWeek: 32,
+              endWeek: 36,
             },
           ],
         },
@@ -1014,11 +1072,18 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Delivery planning',
           chips: [
             {
-              id: 'nutrition-1',
-              label: 'Dietitian review',
-              status: 'not-reviewed',
-              startWeek: 29,
-              endWeek: 32,
+              id: 'delivery-planning-confirm-cephalic',
+              label: 'Confirm cephalic',
+              status: 'future',
+              startWeek: 36,
+              endWeek: 37,
+            },
+            {
+              id: 'delivery-planning-schedule-iol',
+              label: 'Schedule IOL',
+              status: 'future',
+              startWeek: 36,
+              endWeek: 42,
             },
           ],
         },
@@ -1034,11 +1099,11 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Home blood pressure monitoring',
           chips: [
             {
-              id: 'growth-1',
-              label: 'Growth ultrasound',
-              status: 'future',
-              startWeek: 32,
-              endWeek: 36,
+              id: 'home-blood-pressure-monitor',
+              label: 'Home blood pressure monitor',
+              status: 'completed',
+              startWeek: 0,
+              endWeek: 13,
             },
           ],
         },
@@ -1047,11 +1112,11 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Screening pre-eclampsia labs',
           chips: [
             {
-              id: 'hypertension-monitoring-chip',
-              label: 'Blood pressure review',
+              id: 'screening-pre-eclampsia-labs',
+              label: 'Screening pre-eclampsia labs',
               status: 'completed',
-              startWeek: 8,
-              endWeek: 13,
+              startWeek: 26,
+              endWeek: 27,
             },
           ],
         },
@@ -1067,11 +1132,11 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Counseling',
           chips: [
             {
-              id: 'medication-management-chip',
-              label: 'Medication reconciliation',
-              status: 'not-reviewed',
-              startWeek: 12,
-              endWeek: 17,
+              id: 'advanced-maternal-age-counseling',
+              label: 'Counseling',
+              status: 'completed',
+              startWeek: 0,
+              endWeek: 13,
             },
           ],
         },
@@ -1080,11 +1145,32 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Ultrasounds',
           chips: [
             {
-              id: 'fetal-surveillance-chip',
-              label: 'Non-stress testing',
-              status: 'ordered',
-              startWeek: 16,
-              endWeek: 21,
+              id: 'advanced-maternal-age-level-ii-ultrasound',
+              label: 'Level II ultrasound',
+              status: 'completed',
+              startWeek: 18,
+              endWeek: 22,
+            },
+            {
+              id: 'advanced-maternal-age-growth-ultrasound-27',
+              label: 'Growth Ultrasound',
+              status: 'not-reviewed',
+              startWeek: 27,
+              endWeek: 29,
+            },
+            {
+              id: 'advanced-maternal-age-growth-ultrasound-32',
+              label: 'Growth Ultrasound',
+              status: 'future',
+              startWeek: 32,
+              endWeek: 33,
+            },
+            {
+              id: 'advanced-maternal-age-growth-ultrasound-35',
+              label: 'Growth Ultrasound',
+              status: 'future',
+              startWeek: 35,
+              endWeek: 37,
             },
           ],
         },
@@ -1093,11 +1179,32 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Antenatal surveillance',
           chips: [
             {
-              id: 'nutrition-lifestyle-chip',
-              label: 'Nutrition counseling',
-              status: 'due-soon',
-              startWeek: 20,
-              endWeek: 25,
+              id: 'advanced-maternal-age-nst-bpp-36',
+              label: 'NST/BPP',
+              status: 'future',
+              startWeek: 36,
+              endWeek: 37,
+            },
+            {
+              id: 'advanced-maternal-age-nst-bpp-37',
+              label: 'NST/BPP',
+              status: 'future',
+              startWeek: 37,
+              endWeek: 38,
+            },
+            {
+              id: 'advanced-maternal-age-nst-bpp-38',
+              label: 'NST/BPP',
+              status: 'future',
+              startWeek: 38,
+              endWeek: 39,
+            },
+            {
+              id: 'advanced-maternal-age-nst-bpp-39',
+              label: 'NST/BPP',
+              status: 'future',
+              startWeek: 39,
+              endWeek: 40,
             },
           ],
         },
@@ -1113,11 +1220,11 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Home blood pressure monitoring',
           chips: [
             {
-              id: 'laboratory-follow-up-chip',
-              label: 'Repeat laboratory panel',
-              status: 'late',
-              startWeek: 24,
-              endWeek: 29,
+              id: 'gestational-hypertension-home-blood-pressure-monitor',
+              label: 'Home blood pressure monitor',
+              status: 'completed',
+              startWeek: 0,
+              endWeek: 13,
             },
           ],
         },
@@ -1126,11 +1233,11 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Screening pre-eclampsia labs',
           chips: [
             {
-              id: 'delivery-planning-chip',
-              label: 'Delivery readiness review',
-              status: 'incomplete',
-              startWeek: 28,
-              endWeek: 33,
+              id: 'gestational-hypertension-screening-pre-eclampsia-labs',
+              label: 'Screening pre-eclampsia labs',
+              status: 'completed',
+              startWeek: 26,
+              endWeek: 27,
             },
           ],
         },
@@ -1139,10 +1246,24 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Growth Ultrasound',
           chips: [
             {
-              id: 'postpartum-planning-chip',
-              label: 'Postpartum care plan',
+              id: 'gestational-hypertension-growth-ultrasound-27',
+              label: 'Growth Ultrasound',
+              status: 'not-reviewed',
+              startWeek: 27,
+              endWeek: 29,
+            },
+            {
+              id: 'gestational-hypertension-growth-ultrasound-32',
+              label: 'Growth Ultrasound',
               status: 'future',
               startWeek: 32,
+              endWeek: 33,
+            },
+            {
+              id: 'gestational-hypertension-growth-ultrasound-35',
+              label: 'Growth Ultrasound',
+              status: 'future',
+              startWeek: 35,
               endWeek: 37,
             },
           ],
@@ -1152,11 +1273,74 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Antenatal surveillance',
           chips: [
             {
-              id: 'patient-education-chip',
-              label: 'Pregnancy education',
-              status: 'completed',
-              startWeek: 11,
-              endWeek: 16,
+              id: 'gestational-hypertension-nst-bpp-28',
+              label: 'Twice weekly NST/BPP',
+              status: 'due-soon',
+              startWeek: 28,
+              endWeek: 29,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-29',
+              label: 'Twice weekly NST/BPP',
+              status: 'due-soon',
+              startWeek: 29,
+              endWeek: 30,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-30',
+              label: 'Twice weekly NST/BPP',
+              status: 'due-soon',
+              startWeek: 30,
+              endWeek: 31,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-31',
+              label: 'Twice weekly NST/BPP',
+              status: 'due-soon',
+              startWeek: 31,
+              endWeek: 32,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-32',
+              label: 'Twice weekly NST/BPP',
+              status: 'future',
+              startWeek: 32,
+              endWeek: 33,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-33',
+              label: 'Twice weekly NST/BPP',
+              status: 'future',
+              startWeek: 33,
+              endWeek: 34,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-34',
+              label: 'Twice weekly NST/BPP',
+              status: 'future',
+              startWeek: 34,
+              endWeek: 35,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-35',
+              label: 'Twice weekly NST/BPP',
+              status: 'future',
+              startWeek: 35,
+              endWeek: 36,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-36',
+              label: 'Twice weekly NST/BPP',
+              status: 'future',
+              startWeek: 36,
+              endWeek: 37,
+            },
+            {
+              id: 'gestational-hypertension-nst-bpp-37',
+              label: 'Twice weekly NST/BPP',
+              status: 'future',
+              startWeek: 37,
+              endWeek: 38,
             },
           ],
         },
@@ -1465,7 +1649,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly expandedTimelineGroupIds = signal<ReadonlySet<string>>(
     new Set(INITIAL_TIMELINE.groups.slice(0, 5).map((group) => group.id)),
   );
-  readonly weekTicks = Array.from({ length: 11 }, (_, index) => index * 4);
+  readonly weekTicks = [...Array.from({ length: 11 }, (_, index) => index * 4), 42];
   readonly timelineLegend: ReadonlyArray<{ label: string; status: TimelineStatus }> = [
     { label: 'Completed/Reviewed', status: 'completed' },
     { label: 'Completed/Not Reviewed', status: 'not-reviewed' },
@@ -1474,6 +1658,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     { label: 'Late', status: 'late' },
     { label: 'Incomplete', status: 'incomplete' },
     { label: 'Future', status: 'future' },
+    { label: 'Declined', status: 'declined' },
   ];
 
   private activeChipInteraction: ActiveChipInteraction | null = null;
@@ -2176,20 +2361,28 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const tooltip: TimelineStatusTooltip = {
       ...sourceTooltip,
       removedTests: sourceTooltip.removedTests?.map((test) => ({ ...test })),
-      schedule: sourceTooltip.schedule.map((row) => ({ ...row })),
+      schedule: sourceTooltip.schedule.map((row) => ({
+        ...row,
+        value:
+          row.label === 'Scheduled:'
+            ? this.timelineScheduledWeekRange(chip.startWeek, chip.endWeek)
+            : row.value,
+      })),
       tests: sourceTooltip.tests?.map((test) => ({ ...test })),
+      title: chip.label,
     };
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
     const width = Math.min(preferredWidth, Math.max(260, window.innerWidth - 24));
     const preferredHeight: Record<TimelineStatus, number> = {
-      completed: 380,
+      completed: 620,
       future: 657,
       late: 650,
       'not-reviewed': 380,
       ordered: 440,
       incomplete: 400,
       'due-soon': 380,
+      declined: 657,
     };
     const spaceBelow = window.innerHeight - triggerBounds.bottom - 12;
     const spaceAbove = triggerBounds.top - 12;
@@ -2262,7 +2455,16 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       items: (savedProgress?.items ?? DUE_SOON_CHECKLIST).map((item) => ({ ...item })),
       notes: savedProgress?.notes ?? DUE_SOON_DEFAULT_NOTES,
       readOnly,
+      scheduledWeekRange: this.timelineScheduledWeekRange(chip.startWeek, chip.endWeek),
+      title: chip.label,
     });
+  }
+
+  timelineScheduledWeekRange(startWeek: number, endWeek: number): string {
+    const formatWeekValue = (week: number): string =>
+      Number.isInteger(week) ? `${week}` : week.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+
+    return `Week ${formatWeekValue(startWeek)}-${formatWeekValue(endWeek)}`;
   }
 
   showDeliveryChipTooltip(event: Event): void {

@@ -30,7 +30,7 @@ function taskWeekRangeValidator(control: AbstractControl): ValidationErrors | nu
   styleUrl: './timeline-task-dialog.scss',
 })
 export class TimelineTaskDialog {
-  readonly weekOptions = Array.from({ length: 41 }, (_, week) => week);
+  readonly weekOptions = Array.from({ length: 43 }, (_, week) => week);
   readonly form = new FormGroup(
     {
       name: new FormControl('', {

@@ -51,11 +51,11 @@ export class TimelineItemDialog {
     }),
     startWeek: new FormControl(28.5, {
       nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(40)],
+      validators: [Validators.required, Validators.min(0), Validators.max(42)],
     }),
     endWeek: new FormControl(32.5, {
       nonNullable: true,
-      validators: [Validators.required, Validators.min(0), Validators.max(40)],
+      validators: [Validators.required, Validators.min(0), Validators.max(42)],
     }),
   });
   readonly medicationForm = new FormGroup(
@@ -68,8 +68,8 @@ export class TimelineItemDialog {
         nonNullable: true,
         validators: [Validators.required],
       }),
-      startWeek: new FormControl<number | null>(28.5, [Validators.min(0), Validators.max(40)]),
-      endWeek: new FormControl<number | null>(null, [Validators.min(0), Validators.max(40)]),
+      startWeek: new FormControl<number | null>(28.5, [Validators.min(0), Validators.max(42)]),
+      endWeek: new FormControl<number | null>(null, [Validators.min(0), Validators.max(42)]),
     },
     { validators: medicationWeekRangeValidator },
   );

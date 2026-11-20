@@ -79,7 +79,7 @@ describe('PatientDashboard timeline', () => {
         'Antenatal surveillance',
       ],
     ]);
-    expect(groups.flatMap((group) => group.rows).flatMap((row) => row.chips)).toHaveLength(21);
+    expect(groups.flatMap((group) => group.rows).flatMap((row) => row.chips)).toHaveLength(42);
   });
 
   it('reorders timeline groups by drag and keyboard and keeps each change undoable', () => {
@@ -1008,12 +1008,274 @@ describe('PatientDashboard timeline', () => {
       'Completed/Reviewed',
       'Completed/Not Reviewed',
       'Ordered',
+      'Due Soon',
       'Late',
-      'Abnormal',
+      'Incomplete',
       'Future',
+      'Declined',
     ]);
     expect(dashboard.weekTickPercent(0)).toBeGreaterThan(0);
-    expect(dashboard.weekTickPercent(40)).toBeLessThan(100);
+    expect(dashboard.weekTicks).toEqual([0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 42]);
+    expect(dashboard.weekTickPercent(42)).toBeLessThan(100);
+  });
+
+  it('assigns the requested Routine Labs tasks and uses each task name as its tooltip title', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+    const routineLabs = dashboard.pregnancyTimeline().groups[0].rows[0];
+
+    expect(routineLabs).toMatchObject({
+      label: 'Routine Labs',
+      chips: [
+        {
+          label: 'First trimester labs',
+          startWeek: 0,
+          endWeek: 13,
+          status: 'completed',
+        },
+        {
+          label: 'Third trimester labs',
+          startWeek: 24,
+          endWeek: 30,
+          status: 'due-soon',
+        },
+        { label: 'GBS', startWeek: 36, endWeek: 37, status: 'future' },
+      ],
+    });
+
+    const chips = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.problem-timeline__group:first-of-type .problem-timeline__row:first-of-type .problem-timeline__chip',
+      ),
+    ) as HTMLElement[];
+
+    chips.forEach((chip, index) => {
+      chip.dispatchEvent(new MouseEvent('mouseenter'));
+      fixture.detectChanges();
+
+      const title = fixture.nativeElement.querySelector(
+        '#timeline-status-tooltip h2, #due-soon-tooltip h2',
+      ) as HTMLElement;
+      expect(title.textContent?.trim()).toBe(routineLabs.chips[index].label);
+    });
+  });
+
+  it('assigns the requested Routine Ultrasounds task and uses its name as the tooltip title', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+    const routineUltrasounds = dashboard.pregnancyTimeline().groups[0].rows[1];
+
+    expect(routineUltrasounds).toMatchObject({
+      label: 'Routine Ultrasounds',
+      chips: [
+        {
+          label: 'First trimester limited ultrasound',
+          startWeek: 0,
+          endWeek: 13,
+          status: 'completed',
+        },
+      ],
+    });
+
+    const chip = fixture.nativeElement
+      .querySelectorAll('.problem-timeline__group:first-of-type .problem-timeline__row')[1]
+      .querySelector('.problem-timeline__chip') as HTMLElement;
+    chip.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    expect(
+      fixture.nativeElement.querySelector('#timeline-status-tooltip h2')?.textContent?.trim(),
+    ).toBe('First trimester limited ultrasound');
+  });
+
+  it('assigns the requested screening, counseling, and immunization tasks', () => {
+    const dashboard = new PatientDashboard();
+    const rows = dashboard.pregnancyTimeline().groups[0].rows;
+
+    expect(rows.slice(2, 7).map((row) => ({ label: row.label, chips: row.chips }))).toMatchObject([
+      {
+        label: 'Aneuploidy screening',
+        chips: [
+          { label: 'Cell free DNA', startWeek: 10, endWeek: 20, status: 'completed' },
+          { label: 'Maternal serum AFP', startWeek: 15, endWeek: 22, status: 'declined' },
+        ],
+      },
+      {
+        label: 'Genetic screening',
+        chips: [{ label: 'Genetic screening', startWeek: 0, endWeek: 13, status: 'completed' }],
+      },
+      {
+        label: 'Counseling',
+        chips: [
+          { label: 'First trimester counseling', startWeek: 0, endWeek: 13, status: 'completed' },
+          {
+            label: 'Third Trimester counseling',
+            startWeek: 28,
+            endWeek: 32,
+            status: 'due-soon',
+          },
+        ],
+      },
+      {
+        label: 'Social/Behavioral Screening',
+        chips: [
+          { label: 'First trimester screening', startWeek: 0, endWeek: 13, status: 'incomplete' },
+          {
+            label: 'Third trimester screening',
+            startWeek: 28,
+            endWeek: 32,
+            status: 'due-soon',
+          },
+        ],
+      },
+      {
+        label: 'Immunizations',
+        chips: [
+          {
+            label: 'influenza/COVID (Sept-April/May)',
+            startWeek: 0,
+            endWeek: 13,
+            status: 'completed',
+          },
+          { label: 'TDaP', startWeek: 27, endWeek: 36, status: 'due-soon' },
+          { label: 'RSV', startWeek: 32, endWeek: 36, status: 'future' },
+        ],
+      },
+    ]);
+  });
+
+  it('assigns the requested Delivery planning tasks', () => {
+    const dashboard = new PatientDashboard();
+    const deliveryPlanning = dashboard.pregnancyTimeline().groups[0].rows[7];
+
+    expect(deliveryPlanning).toMatchObject({
+      label: 'Delivery planning',
+      chips: [
+        { label: 'Confirm cephalic', startWeek: 36, endWeek: 37, status: 'future' },
+        { label: 'Schedule IOL', startWeek: 36, endWeek: 42, status: 'future' },
+      ],
+    });
+  });
+
+  it('assigns the requested Elevated Blood Pressure tasks', () => {
+    const dashboard = new PatientDashboard();
+    const rows = dashboard.pregnancyTimeline().groups[1].rows;
+
+    expect(rows).toMatchObject([
+      {
+        label: 'Home blood pressure monitoring',
+        chips: [
+          {
+            label: 'Home blood pressure monitor',
+            startWeek: 0,
+            endWeek: 13,
+            status: 'completed',
+          },
+        ],
+      },
+      {
+        label: 'Screening pre-eclampsia labs',
+        chips: [
+          {
+            label: 'Screening pre-eclampsia labs',
+            startWeek: 26,
+            endWeek: 27,
+            status: 'completed',
+          },
+        ],
+      },
+    ]);
+  });
+
+  it('assigns the requested Advanced Maternal Age counseling and ultrasound tasks', () => {
+    const dashboard = new PatientDashboard();
+    const rows = dashboard.pregnancyTimeline().groups[2].rows;
+
+    expect(rows.slice(0, 2)).toMatchObject([
+      {
+        label: 'Counseling',
+        chips: [{ label: 'Counseling', startWeek: 0, endWeek: 13, status: 'completed' }],
+      },
+      {
+        label: 'Ultrasounds',
+        chips: [
+          { label: 'Level II ultrasound', startWeek: 18, endWeek: 22, status: 'completed' },
+          { label: 'Growth Ultrasound', startWeek: 27, endWeek: 29, status: 'not-reviewed' },
+          { label: 'Growth Ultrasound', startWeek: 32, endWeek: 33, status: 'future' },
+          { label: 'Growth Ultrasound', startWeek: 35, endWeek: 37, status: 'future' },
+        ],
+      },
+    ]);
+  });
+
+  it('assigns weekly NST/BPP tasks to Advanced Maternal Age antenatal surveillance', () => {
+    const dashboard = new PatientDashboard();
+    const antenatalSurveillance = dashboard.pregnancyTimeline().groups[2].rows[2];
+
+    expect(antenatalSurveillance).toMatchObject({
+      label: 'Antenatal surveillance',
+      chips: [
+        { label: 'NST/BPP', startWeek: 36, endWeek: 37, status: 'future' },
+        { label: 'NST/BPP', startWeek: 37, endWeek: 38, status: 'future' },
+        { label: 'NST/BPP', startWeek: 38, endWeek: 39, status: 'future' },
+        { label: 'NST/BPP', startWeek: 39, endWeek: 40, status: 'future' },
+      ],
+    });
+  });
+
+  it('assigns the requested Gestational Hypertension tasks', () => {
+    const dashboard = new PatientDashboard();
+    const rows = dashboard.pregnancyTimeline().groups[3].rows;
+
+    expect(rows).toMatchObject([
+      {
+        label: 'Home blood pressure monitoring',
+        chips: [
+          {
+            label: 'Home blood pressure monitor',
+            startWeek: 0,
+            endWeek: 13,
+            status: 'completed',
+          },
+        ],
+      },
+      {
+        label: 'Screening pre-eclampsia labs',
+        chips: [
+          {
+            label: 'Screening pre-eclampsia labs',
+            startWeek: 26,
+            endWeek: 27,
+            status: 'completed',
+          },
+        ],
+      },
+      {
+        label: 'Growth Ultrasound',
+        chips: [
+          { label: 'Growth Ultrasound', startWeek: 27, endWeek: 29, status: 'not-reviewed' },
+          { label: 'Growth Ultrasound', startWeek: 32, endWeek: 33, status: 'future' },
+          { label: 'Growth Ultrasound', startWeek: 35, endWeek: 37, status: 'future' },
+        ],
+      },
+      {
+        label: 'Antenatal surveillance',
+        chips: [
+          { label: 'Twice weekly NST/BPP', startWeek: 28, endWeek: 29, status: 'due-soon' },
+          { label: 'Twice weekly NST/BPP', startWeek: 29, endWeek: 30, status: 'due-soon' },
+          { label: 'Twice weekly NST/BPP', startWeek: 30, endWeek: 31, status: 'due-soon' },
+          { label: 'Twice weekly NST/BPP', startWeek: 31, endWeek: 32, status: 'due-soon' },
+          { label: 'Twice weekly NST/BPP', startWeek: 32, endWeek: 33, status: 'future' },
+          { label: 'Twice weekly NST/BPP', startWeek: 33, endWeek: 34, status: 'future' },
+          { label: 'Twice weekly NST/BPP', startWeek: 34, endWeek: 35, status: 'future' },
+          { label: 'Twice weekly NST/BPP', startWeek: 35, endWeek: 36, status: 'future' },
+          { label: 'Twice weekly NST/BPP', startWeek: 36, endWeek: 37, status: 'future' },
+          { label: 'Twice weekly NST/BPP', startWeek: 37, endWeek: 38, status: 'future' },
+        ],
+      },
+    ]);
   });
 
   it('renders each timeline chip label from its data status', () => {
@@ -1023,9 +1285,11 @@ describe('PatientDashboard timeline', () => {
       completed: 'Completed/Reviewed',
       'not-reviewed': 'Completed/Not Reviewed',
       ordered: 'Ordered',
+      'due-soon': 'Due Soon',
       late: 'Late',
-      abnormal: 'Abnormal',
+      incomplete: 'Incomplete',
       future: 'Future',
+      declined: 'Declined',
     };
 
     const chips = Array.from(
@@ -1041,16 +1305,49 @@ describe('PatientDashboard timeline', () => {
     });
   });
 
+  it('opens the Future-style tooltip with dark-gray Declined status treatment', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+    const trigger = document.createElement('div');
+    document.body.append(trigger);
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'declined-test',
+        label: 'Declined screening',
+        status: 'declined',
+        startWeek: 12,
+        endWeek: 16,
+      },
+      { currentTarget: trigger } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector(
+      '.timeline-status-tooltip[data-status="declined"]',
+    ) as HTMLElement;
+
+    expect(dashboard.timelineStatusLabel('declined')).toBe('Declined');
+    expect(tooltip).toBeTruthy();
+    expect(tooltip.querySelector('h2')?.textContent?.trim()).toBe('Declined screening');
+    expect(tooltip.querySelector('.timeline-status-tooltip__badge')?.textContent?.trim()).toBe(
+      'Declined',
+    );
+    expect(tooltip.querySelector('.timeline-status-tooltip__tests')).toBeTruthy();
+    expect(tooltip.querySelector('#timeline-tooltip-other-test')).toBeTruthy();
+    trigger.remove();
+  });
+
   it('shows the matching custom status tooltip when each chip status is hovered', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     fixture.detectChanges();
     const expectedBadges: Record<string, string> = {
-      abnormal: 'Abnormal Finding',
       completed: 'Completed/Reviewed',
-      future: 'Incomplete',
-      late: 'Late',
+      declined: 'Declined',
+      future: 'Future',
+      incomplete: 'Incomplete',
       'not-reviewed': 'Completed/Not Reviewed',
-      ordered: 'Ordered',
     };
 
     Object.entries(expectedBadges).forEach(([status, badge]) => {
@@ -1088,7 +1385,8 @@ describe('PatientDashboard timeline', () => {
     const dueSoonTooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
     expect(dueSoonTooltip).toBeTruthy();
     expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
-    expect(dueSoonTooltip.textContent).toContain('Vaccines (Week 26–28)');
+    expect(dueSoonTooltip.textContent).toContain('Third trimester labs');
+    expect(dueSoonTooltip.textContent).toContain('Scheduled: Week 24-30');
     expect(dueSoonTooltip.textContent).toContain('1 of 4 completed');
 
     const fluCheckbox = dueSoonTooltip.querySelectorAll(
@@ -1100,8 +1398,53 @@ describe('PatientDashboard timeline', () => {
     expect(dueSoonTooltip.textContent).toContain('2 of 4 completed');
   });
 
+  it('uses each task start and end week in every status tooltip Scheduled row', () => {
+    const dashboard = new PatientDashboard();
+    const trigger = document.createElement('div');
+
+    for (const status of [
+      'completed',
+      'not-reviewed',
+      'ordered',
+      'late',
+      'incomplete',
+      'future',
+      'declined',
+    ] as const) {
+      dashboard.showTimelineStatusTooltip(
+        {
+          id: `scheduled-${status}`,
+          label: `${status} task`,
+          status,
+          startWeek: 12.5,
+          endWeek: 13.75,
+        },
+        { currentTarget: trigger } as unknown as Event,
+      );
+
+      expect(
+        dashboard
+          .activeTimelineStatusTooltip()
+          ?.tooltip.schedule.find((row) => row.label === 'Scheduled:')?.value,
+      ).toBe('Week 12.5-13.75');
+    }
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'scheduled-due-soon',
+        label: 'due-soon task',
+        status: 'due-soon',
+        startWeek: 24,
+        endWeek: 30,
+      },
+      { currentTarget: trigger } as unknown as Event,
+    );
+
+    expect(dashboard.activeDueSoonTooltip()?.scheduledWeekRange).toBe('Week 24-30');
+  });
+
   it('adds an Other lab test for every status that displays the field', () => {
-    for (const status of ['future', 'late']) {
+    for (const status of ['future', 'declined']) {
       const fixture = TestBed.createComponent(PatientDashboard);
       fixture.detectChanges();
       const dashboard = fixture.componentInstance;
@@ -1140,7 +1483,7 @@ describe('PatientDashboard timeline', () => {
   });
 
   it('uses the shared Lab Tests section for every status that displays tests', () => {
-    for (const status of ['ordered', 'late', 'incomplete', 'future']) {
+    for (const status of ['incomplete', 'future', 'declined']) {
       const fixture = TestBed.createComponent(PatientDashboard);
       fixture.detectChanges();
       const chip = fixture.nativeElement.querySelector(
@@ -1165,7 +1508,7 @@ describe('PatientDashboard timeline', () => {
   });
 
   it('uses the shared tooltip header for every status that displays it', () => {
-    for (const status of ['completed', 'not-reviewed', 'ordered', 'late', 'incomplete', 'future']) {
+    for (const status of ['completed', 'not-reviewed', 'incomplete', 'future', 'declined']) {
       const fixture = TestBed.createComponent(PatientDashboard);
       fixture.detectChanges();
       const chip = fixture.nativeElement.querySelector(
@@ -1189,6 +1532,71 @@ describe('PatientDashboard timeline', () => {
     }
   });
 
+  it('keeps each tooltip badge label identical to its timeline chip status', () => {
+    for (const status of ['completed', 'not-reviewed', 'incomplete', 'future', 'declined']) {
+      const fixture = TestBed.createComponent(PatientDashboard);
+      fixture.detectChanges();
+      const chip = fixture.nativeElement.querySelector(
+        `.problem-timeline__chip[data-status="${status}"]`,
+      ) as HTMLElement;
+      const chipLabel = chip.querySelector('.problem-timeline__chip-label')?.textContent?.trim();
+
+      chip.dispatchEvent(new MouseEvent('mouseenter'));
+      fixture.detectChanges();
+
+      const badgeLabel = fixture.nativeElement
+        .querySelector('.timeline-status-tooltip__badge')
+        ?.textContent?.trim();
+
+      expect(badgeLabel).toBe(chipLabel);
+    }
+  });
+
+  it('uses the shared header and schedule structure for the Due Soon tooltip', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector(
+      '.problem-timeline__chip[data-status="due-soon"]',
+    ) as HTMLElement;
+
+    chip.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
+    const badge = tooltip.querySelector('.timeline-status-tooltip__badge') as HTMLElement;
+
+    expect(tooltip.querySelector('header.timeline-status-tooltip__header')).toBeTruthy();
+    expect(tooltip.querySelector('.timeline-status-tooltip__schedule')).toBeTruthy();
+    expect(tooltip.querySelectorAll('.timeline-status-tooltip__schedule-row')).toHaveLength(2);
+    expect(badge.textContent?.trim()).toBe('Due Soon');
+    expect(badge.textContent?.trim()).toBe(chip.textContent?.trim());
+  });
+
+  it('shows the CBC result table above Notes for Completed/Reviewed', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+    const chip = fixture.nativeElement.querySelector(
+      '.problem-timeline__chip[data-status="completed"]',
+    ) as HTMLElement;
+
+    chip.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector(
+      '.timeline-status-tooltip[data-status="completed"]',
+    ) as HTMLElement;
+    const table = tooltip.querySelector('.result-tooltip__table') as HTMLElement;
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+    const rows = table.querySelectorAll('.result-tooltip__table-row');
+
+    expect(table).toBeTruthy();
+    expect(rows).toHaveLength(14);
+    expect(table.querySelector('.result-tooltip__table-value--alert')?.textContent?.trim()).toBe(
+      '11.2 g/dL L',
+    );
+    expect(table.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('expands tooltip notes according to their wrapped content', () => {
     const dashboard = new PatientDashboard();
 
@@ -1203,7 +1611,7 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
     const dashboard = fixture.componentInstance;
     const chip = fixture.nativeElement.querySelector(
-      '.problem-timeline__chip[data-status="ordered"]',
+      '.problem-timeline__chip[data-status="future"]',
     ) as HTMLElement;
 
     chip.dispatchEvent(new MouseEvent('mouseenter'));
@@ -1288,7 +1696,7 @@ describe('PatientDashboard timeline', () => {
     const dashboard = new PatientDashboard();
     const trigger = document.createElement('div');
     const originalInnerHeight = window.innerHeight;
-    const lateChip = dashboard.pregnancyTimeline().groups[0].rows[2].chips[0];
+    const lateChip = dashboard.pregnancyTimeline().groups[3].rows[0].chips[0];
     Object.defineProperty(window, 'innerHeight', { configurable: true, value: 260 });
     vi.spyOn(trigger, 'getBoundingClientRect').mockReturnValue({
       bottom: 100,
@@ -1312,13 +1720,13 @@ describe('PatientDashboard timeline', () => {
 
   it('detects when a chip crosses the JSON current-week line without changing its status', () => {
     const dashboard = new PatientDashboard();
-    const chip = dashboard.pregnancyTimeline().groups[0].rows[0].chips[1];
+    const chip = dashboard.pregnancyTimeline().groups[0].rows[0].chips[0];
 
     expect(dashboard.chipCrossesCurrentWeek(chip)).toBe(false);
     expect(dashboard.chipCrossesCurrentWeek({ ...chip, startWeek: 27, endWeek: 30 })).toBe(true);
   });
 
-  it('moves a focused chip with the keyboard without leaving the 0 to 40 week range', () => {
+  it('moves a focused chip with the keyboard without leaving the 0 to 42 week range', () => {
     const dashboard = new PatientDashboard();
     const chip = dashboard.pregnancyTimeline().groups[0].rows[0].chips[0];
     const keyboardEvent = new KeyboardEvent('keydown', { key: 'ArrowRight' });
@@ -1326,8 +1734,8 @@ describe('PatientDashboard timeline', () => {
     dashboard.moveChipWithKeyboard(keyboardEvent, 'routine-prenatal-care', 'labs', chip);
 
     const movedChip = dashboard.pregnancyTimeline().groups[0].rows[0].chips[0];
-    expect(movedChip.startWeek).toBe(4.5);
-    expect(movedChip.endWeek).toBe(12.5);
+    expect(movedChip.startWeek).toBe(0.5);
+    expect(movedChip.endWeek).toBe(13.5);
   });
 
   it('uses the D3 week scale to drag and resize chips across the current-week line', () => {
@@ -1363,8 +1771,8 @@ describe('PatientDashboard timeline', () => {
 
     const movedChip = dashboard.pregnancyTimeline().groups[0].rows[0].chips[1];
     expect(movedChip.startWeek).toBe(26);
-    expect(movedChip.endWeek).toBe(29);
-    expect(movedChip.status).toBe('ordered');
+    expect(movedChip.endWeek).toBe(32);
+    expect(movedChip.status).toBe('due-soon');
     expect(dashboard.chipCrossesCurrentWeek(movedChip)).toBe(true);
 
     dashboard.startChipInteraction(
@@ -1387,7 +1795,7 @@ describe('PatientDashboard timeline', () => {
     } as unknown as PointerEvent);
 
     const resizedChip = dashboard.pregnancyTimeline().groups[0].rows[0].chips[1];
-    expect(resizedChip.endWeek).toBe(31);
+    expect(resizedChip.endWeek).toBe(34);
   });
 
   it('moves and resizes the delivery chip within the timeline track', () => {
@@ -1612,7 +2020,7 @@ describe('PatientDashboard timeline', () => {
     track.append(chipElement);
     vi.spyOn(track, 'getBoundingClientRect').mockReturnValue({ width: 400 } as DOMRect);
 
-    const lateChip = dashboard.pregnancyTimeline().groups[0].rows[2].chips[0];
+    const futureChip = dashboard.pregnancyTimeline().groups[3].rows[3].chips[4];
     dashboard.startChipInteraction(
       {
         currentTarget: chipElement,
@@ -1621,44 +2029,44 @@ describe('PatientDashboard timeline', () => {
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
       } as unknown as PointerEvent,
-      'routine-prenatal-care',
-      'genetic-screening',
-      lateChip,
+      'gestational-hypertension',
+      'patient-education-task',
+      futureChip,
       'move',
     );
     dashboard.onChipPointerMove({
       pointerId: 3,
-      clientX: 340,
+      clientX: 55,
       preventDefault: vi.fn(),
     } as unknown as PointerEvent);
     dashboard.endChipInteraction({ pointerId: 3 } as PointerEvent);
 
-    const futureChip = dashboard.pregnancyTimeline().groups[0].rows[2].chips[0];
-    expect(futureChip.startWeek).toBe(28);
-    expect(futureChip.status).toBe('future');
+    const lateChip = dashboard.pregnancyTimeline().groups[3].rows[3].chips[4];
+    expect(lateChip.startWeek).toBe(27.25);
+    expect(lateChip.status).toBe('late');
 
     dashboard.startChipInteraction(
       {
         currentTarget: chipElement,
         pointerId: 4,
-        clientX: 340,
+        clientX: 55,
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
       } as unknown as PointerEvent,
-      'routine-prenatal-care',
-      'genetic-screening',
-      futureChip,
+      'gestational-hypertension',
+      'patient-education-task',
+      lateChip,
       'move',
     );
     dashboard.onChipPointerMove({
       pointerId: 4,
-      clientX: 330,
+      clientX: 65,
       preventDefault: vi.fn(),
     } as unknown as PointerEvent);
 
-    const lateAgainChip = dashboard.pregnancyTimeline().groups[0].rows[2].chips[0];
-    expect(lateAgainChip.startWeek).toBe(27);
-    expect(lateAgainChip.status).toBe('late');
+    const futureAgainChip = dashboard.pregnancyTimeline().groups[3].rows[3].chips[4];
+    expect(futureAgainChip.startWeek).toBe(28.25);
+    expect(futureAgainChip.status).toBe('future');
   });
 
   it('opens the matching vital tooltip and generates its animated SVG path', () => {

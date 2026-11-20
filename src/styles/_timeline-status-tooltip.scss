@@ -73,16 +73,23 @@
   --timeline-status-tooltip-soft: #fef7ea;
 }
 
+.timeline-status-tooltip[data-status='declined'] {
+  --timeline-status-tooltip-accent: #4b5563;
+  --timeline-status-tooltip-badge-background: #4b5563;
+  --timeline-status-tooltip-badge-color: #fff;
+  --timeline-status-tooltip-soft: #f3f4f6;
+}
+
 .timeline-status-tooltip[data-status='not-reviewed'] {
   --timeline-status-tooltip-accent: #0f766e;
-  --timeline-status-tooltip-badge-background: #ddf0ee;
-  --timeline-status-tooltip-badge-color: #034e58;
+  --timeline-status-tooltip-badge-background: #87b7b2;
+  --timeline-status-tooltip-badge-color: #fff;
   --timeline-status-tooltip-soft: #f0fdfa;
 }
 
 .timeline-status-tooltip[data-status='completed'] {
-  --timeline-status-tooltip-badge-background: #c4fffd;
-  --timeline-status-tooltip-badge-color: #034e58;
+  --timeline-status-tooltip-badge-background: #265b64;
+  --timeline-status-tooltip-badge-color: #fff;
 }
 
 .timeline-status-tooltip[data-status='due-soon'] {
@@ -446,7 +453,8 @@
   outline-offset: 0.125rem;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__content {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__content {
   gap: 1rem;
   padding: 1.25rem;
 }
@@ -485,7 +493,8 @@
   white-space: nowrap;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__schedule-row {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__schedule-row {
   color: #6b7280;
   font-size: 0.8125rem;
   line-height: 1.125rem;
@@ -517,7 +526,7 @@
   display: none;
 }
 
-.timeline-status-tooltip[data-status='future']
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
   .timeline-status-tooltip__icon[data-icon='calendar'] {
   width: 0.75rem;
   height: 0.75rem;
@@ -636,7 +645,8 @@
   opacity: 1;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__notes {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__notes {
   gap: 0.75rem;
   padding-top: 0;
   border-top: 0;
@@ -646,7 +656,9 @@
   text-transform: uppercase;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__notes textarea {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__notes
+  textarea {
   border-color: #e3ded9;
   border-radius: 0.5rem;
   font-family: Inter, sans-serif;
@@ -656,15 +668,17 @@
   text-transform: none;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__bulk-actions {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__bulk-actions {
   grid-template-columns: 1fr;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__order-all {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__order-all {
   width: 100%;
 }
 
-.timeline-status-tooltip[data-status='future']
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
   .timeline-status-tooltip__icon[data-icon='reviewed-calendar'] {
   width: 0.6875rem;
   height: 0.6875rem;
@@ -673,7 +687,8 @@
   mask: none;
 }
 
-.timeline-status-tooltip--submitted-results[data-status='future'] .timeline-status-tooltip__badge {
+.timeline-status-tooltip--submitted-results:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__badge {
   width: auto;
   max-width: none;
   min-height: auto;
@@ -718,7 +733,8 @@
   box-shadow: none;
 }
 
-.timeline-status-tooltip[data-status='future'] .timeline-status-tooltip__schedule--reviewed {
+.timeline-status-tooltip:is([data-status='future'], [data-status='declined'])
+  .timeline-status-tooltip__schedule--reviewed {
   flex-flow: row wrap;
   justify-content: space-between;
 }
@@ -1017,6 +1033,11 @@
   gap: 0.5rem;
 }
 
+.timeline-status-tooltip__result-table {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
 .timeline-status-tooltip__bulk-actions button {
   min-height: 2.25rem;
   padding: 0.625rem;
@@ -1187,20 +1208,17 @@
 }
 
 .due-soon-tooltip__schedule {
-  display: flex;
-  gap: 1.125rem;
-  align-items: center;
-  margin-top: 0.5rem;
+  gap: 0.5rem;
 }
 
 .due-soon-tooltip__schedule > span {
-  display: inline-flex;
-  gap: 0.4375rem;
+  display: flex;
+  gap: 0.5rem;
   align-items: center;
-  color: #7b8491;
-  font-size: 0.8125rem;
+  min-width: 0;
+  color: #73808c;
+  font-size: 0.75rem;
   line-height: 1.125rem;
-  white-space: nowrap;
 }
 
 .due-soon-tooltip__icon {
