@@ -1088,6 +1088,296 @@ describe('PatientDashboard timeline', () => {
     expect(
       fixture.nativeElement.querySelector('#timeline-status-tooltip h2')?.textContent?.trim(),
     ).toBe('First trimester limited ultrasound');
+
+    expect(
+      fixture.nativeElement
+        .querySelector('.timeline-status-tooltip__result-title')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim(),
+    ).toBe('Test Name: OB first trimester limited ultrasound');
+    expect(
+      fixture.nativeElement.querySelector('.timeline-status-tooltip__result-notice')?.textContent,
+    ).toContain('EDD updated to June 15, 2026');
+
+    const resultHeaders = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.timeline-status-tooltip__result-table [role="columnheader"]',
+      ),
+    ).map((header) => (header as HTMLElement).textContent?.trim());
+    expect(resultHeaders).toEqual(['Finding', 'Result', 'Reference / Interpretation']);
+
+    const resultRows = Array.from(
+      fixture.nativeElement.querySelectorAll(
+        '.timeline-status-tooltip__result-table .result-tooltip__table-row',
+      ),
+    ).map((row) => (row as HTMLElement).textContent?.replace(/\s+/g, ' ').trim());
+    expect(resultRows).toHaveLength(9);
+    expect(resultRows[0]).toContain('Gestational age (ultrasound) 8 weeks 4 days');
+    expect(resultRows[1]).toContain('Estimated due date (EDD) June 15, 2026');
+    expect(
+      fixture.nativeElement
+        .querySelector('.timeline-status-tooltip__result-table + .timeline-status-tooltip__notes')
+        ?.textContent?.replace(/\s+/g, ' ')
+        .trim(),
+    ).toContain('Notes:');
+    expect(
+      fixture.nativeElement.querySelector(
+        '.timeline-status-tooltip__result-table + .timeline-status-tooltip__notes textarea',
+      )?.value,
+    ).toContain('EDD updated to June 15, 2026');
+  });
+
+  it('shows the MaterniT21 result and notes only for the completed Cell free DNA task', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'aneuploidy-cell-free-dna',
+        label: 'Cell free DNA',
+        status: 'completed',
+        startWeek: 10,
+        endWeek: 20,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const headers = Array.from(tooltip.querySelectorAll('[role="columnheader"]')).map((header) =>
+      (header as HTMLElement).textContent?.trim(),
+    );
+    const cells = Array.from(
+      tooltip.querySelectorAll('.timeline-status-tooltip__result-table [role="cell"]'),
+    ).map((cell) => (cell as HTMLElement).textContent?.replace(/\s+/g, ' ').trim());
+
+    expect(headers).toEqual(['Finding', 'Result', 'Reference / Interpretation']);
+    expect(cells).toEqual(['MaterniT21 testing', 'Negative for Trisomy 21, 13, 18;', '—']);
+    expect(tooltip.querySelectorAll('.result-tooltip__table-row')).toHaveLength(1);
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-title')).toBeNull();
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-notice')).toBeNull();
+    expect(
+      (tooltip.querySelector('.timeline-status-tooltip__notes textarea') as HTMLTextAreaElement)
+        .value,
+    ).toContain('MaterniT21 cell-free DNA screening reviewed');
+  });
+
+  it('shows Maternal serum AFP in its initial declined state with notes', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'aneuploidy-maternal-serum-afp',
+        label: 'Maternal serum AFP',
+        status: 'declined',
+        startWeek: 15,
+        endWeek: 22,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const testSection = tooltip.querySelector(
+      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
+    ) as HTMLElement;
+    const testRows = testSection.querySelectorAll('.timeline-status-tooltip__test');
+    const notes = tooltip.querySelector(
+      '.timeline-status-tooltip__notes--editable textarea',
+    ) as HTMLTextAreaElement;
+
+    expect(testRows).toHaveLength(1);
+    expect(testRows[0].classList).toContain('timeline-status-tooltip__test--declined');
+    expect(testRows[0].textContent).toContain('Maternal serum AFP');
+    expect(testRows[0].textContent).toContain('Reactivate');
+    expect(notes.placeholder).toBe(
+      'Add clinical notes about why Maternal serum AFP was declined...',
+    );
+
+    (
+      testRows[0].querySelector('.timeline-status-tooltip__reactivate') as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+    (
+      tooltip.querySelector(
+        '.timeline-status-tooltip__tests[aria-label="Lab tests"] .timeline-status-tooltip__remove',
+      ) as HTMLButtonElement
+    ).click();
+    fixture.detectChanges();
+
+    const removedOrders = tooltip.querySelector(
+      '.timeline-status-tooltip__removed-orders',
+    ) as HTMLElement;
+    const permanentRemove = removedOrders.querySelector(
+      '[aria-label="Remove Maternal serum AFP permanently"]',
+    ) as HTMLButtonElement;
+
+    expect(removedOrders.textContent).toContain('Maternal serum AFP');
+    expect(permanentRemove).toBeTruthy();
+
+    permanentRemove.click();
+    fixture.detectChanges();
+
+    expect(tooltip.querySelector('.timeline-status-tooltip__removed-orders')).toBeNull();
+  });
+
+  it('shows the three completed carrier results and notes for Genetic screening', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'genetic-screening-1',
+        label: 'Genetic screening',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const headers = Array.from(tooltip.querySelectorAll('[role="columnheader"]')).map((header) =>
+      (header as HTMLElement).textContent?.trim(),
+    );
+    const rows = Array.from(
+      tooltip.querySelectorAll('.timeline-status-tooltip__result-table .result-tooltip__table-row'),
+    ).map((row) =>
+      Array.from(row.querySelectorAll('[role="cell"]')).map((cell) =>
+        (cell as HTMLElement).textContent?.replace(/\s+/g, ' ').trim(),
+      ),
+    );
+    const notes = tooltip.querySelector(
+      '.timeline-status-tooltip__notes textarea',
+    ) as HTMLTextAreaElement;
+    const resultTable = tooltip.querySelector(
+      '.timeline-status-tooltip__result-table',
+    ) as HTMLElement;
+    const labTests = tooltip.querySelector(
+      '.timeline-status-tooltip__result-table + .timeline-status-tooltip__tests[aria-label="Lab tests"]',
+    ) as HTMLElement;
+    const fragileX = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
+
+    expect(headers).toEqual(['Test Name', 'Value', 'Ref. Range']);
+    expect(rows).toEqual([
+      ['Hemoglobin electrophoresis', 'Negative', '—'],
+      ['Cystic fibrosis', 'Negative', '—'],
+      ['Spinal muscular atrophy', 'Negative', '—'],
+    ]);
+    expect(resultTable.compareDocumentPosition(labTests)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(fragileX.classList).toContain('timeline-status-tooltip__test--declined');
+    expect(fragileX.textContent).toContain('Fragile X');
+    expect(fragileX.textContent).toContain('Reactivate');
+    expect(notes.value).toContain('Genetic carrier screening results reviewed');
+
+    (fragileX.querySelector('.timeline-status-tooltip__reactivate') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const activeFragileX = tooltip.querySelector(
+      '.timeline-status-tooltip__result-table + .timeline-status-tooltip__tests .timeline-status-tooltip__test',
+    ) as HTMLElement;
+    expect(activeFragileX.textContent).toContain('Decline');
+    expect(activeFragileX.textContent).not.toContain('Order');
+
+    (activeFragileX.querySelector('.timeline-status-tooltip__remove') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const removedOrders = tooltip.querySelector(
+      '.timeline-status-tooltip__result-table ~ .timeline-status-tooltip__removed-orders',
+    ) as HTMLElement;
+    const permanentRemove = removedOrders.querySelector(
+      '[aria-label="Remove Fragile X permanently"]',
+    ) as HTMLButtonElement;
+    expect(removedOrders.textContent).toContain('Fragile X');
+    expect(removedOrders.textContent).toContain('Decline');
+    expect(removedOrders.querySelector('.timeline-status-tooltip__order')).toBeNull();
+    expect(permanentRemove).toBeTruthy();
+
+    permanentRemove.click();
+    fixture.detectChanges();
+    expect(
+      tooltip.querySelector(
+        '.timeline-status-tooltip__result-table ~ .timeline-status-tooltip__removed-orders',
+      ),
+    ).toBeNull();
+  });
+
+  it('shows the completed First trimester counseling checklist without notes', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'counseling-first-trimester',
+        label: 'First trimester counseling',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    const expectedLabels = [
+      'Routine Care and Testing',
+      'Diet/Exercise in Pregnancy',
+      'Recommend Prenatal vitamins',
+      'Safe Medications',
+      'Substance Use',
+      'Safety/Precautions',
+      'Warning Signs',
+    ];
+    const labels = Array.from(
+      checklist.querySelectorAll('.due-soon-tooltip__item label > span:last-child'),
+    ).map((label) => (label as HTMLElement).textContent?.trim());
+    const checkboxes = Array.from(
+      checklist.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+    );
+
+    expect(labels).toEqual(expectedLabels);
+    expect(checkboxes).toHaveLength(7);
+    expect(checkboxes.every((checkbox) => checkbox.checked)).toBe(true);
+    expect(checklist.textContent).toContain('7 of 7 completed');
+    expect(checklist.querySelector('button')).toBeNull();
+    expect(checklist.querySelector('textarea')).toBeNull();
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+    expect(notes).toBeTruthy();
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'First trimester counseling completed',
+    );
+
+    checkboxes[0].click();
+    fixture.detectChanges();
+
+    let firstItem = checklist.querySelector('.due-soon-tooltip__item') as HTMLElement;
+    let action = firstItem.querySelector('button') as HTMLButtonElement;
+    expect(action.textContent?.trim()).toBe('Decline');
+    expect(checklist.textContent).toContain('6 of 7 completed');
+
+    action.click();
+    fixture.detectChanges();
+    firstItem = checklist.querySelector('.due-soon-tooltip__item') as HTMLElement;
+    action = firstItem.querySelector('button') as HTMLButtonElement;
+    expect(firstItem.classList).toContain('due-soon-tooltip__item--declined');
+    expect(action.textContent?.trim()).toBe('Reactivate');
+
+    action.click();
+    fixture.detectChanges();
+    firstItem = checklist.querySelector('.due-soon-tooltip__item') as HTMLElement;
+    expect(firstItem.classList).not.toContain('due-soon-tooltip__item--declined');
+    expect(firstItem.querySelector('button')?.textContent?.trim()).toBe('Decline');
+    expect(checklist.querySelector('textarea')).toBeNull();
   });
 
   it('assigns the requested screening, counseling, and immunization tasks', () => {
@@ -1387,15 +1677,92 @@ describe('PatientDashboard timeline', () => {
     expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
     expect(dueSoonTooltip.textContent).toContain('Third trimester labs');
     expect(dueSoonTooltip.textContent).toContain('Scheduled: Week 24-30');
-    expect(dueSoonTooltip.textContent).toContain('1 of 4 completed');
+    expect(dueSoonTooltip.textContent).toContain('Lab Tests:');
+    expect(dueSoonTooltip.textContent).toContain('1hr GTT');
+    expect(dueSoonTooltip.textContent).toContain('CBC');
+    expect(dueSoonTooltip.textContent).toContain('HIV antigen/antibody');
+    expect(dueSoonTooltip.textContent).toContain('Syphilis antibody');
+    expect(dueSoonTooltip.querySelector('.due-soon-tooltip__checklist')).toBeTruthy();
+    expect(dueSoonTooltip.querySelector('.due-soon-tooltip__footer')).toBeTruthy();
 
-    const fluCheckbox = dueSoonTooltip.querySelectorAll(
-      'input[type="checkbox"]',
-    )[1] as HTMLInputElement;
-    fluCheckbox.click();
+    const firstOrderButton = Array.from(dueSoonTooltip.querySelectorAll('button')).find(
+      (button) => button.textContent?.trim() === 'Order',
+    ) as HTMLButtonElement;
+    firstOrderButton.click();
     fixture.detectChanges();
 
-    expect(dueSoonTooltip.textContent).toContain('2 of 4 completed');
+    expect(dueSoonTooltip.querySelector('.timeline-status-tooltip__test--ordered')).toBeTruthy();
+  });
+
+  it('shows the Third Trimester counseling checklist with conditional item notes', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'counseling-third-trimester',
+        label: 'Third Trimester counseling',
+        status: 'due-soon',
+        startWeek: 28,
+        endWeek: 32,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
+    const checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    const expectedLabels = [
+      'Kick Counts',
+      'Pre-eclampsia Signs/Symptoms',
+      'Birth Plans (if applicable)',
+      'Contraception plans',
+    ];
+    const labels = Array.from(
+      checklist.querySelectorAll('.due-soon-tooltip__item label > span:last-child'),
+    ).map((label) => (label as HTMLElement).textContent?.trim());
+    const checkboxes = Array.from(
+      checklist.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+    );
+
+    expect(labels).toEqual(expectedLabels);
+    expect(checkboxes.every((checkbox) => !checkbox.checked)).toBe(true);
+    expect(checklist.textContent).toContain('0 of 4 completed');
+    expect(checklist.querySelectorAll('button')).toHaveLength(4);
+    expect(checklist.querySelector('textarea')).toBeNull();
+    expect(checklist.textContent).not.toContain('Lab Tests:');
+
+    checkboxes[0].click();
+    fixture.detectChanges();
+    let items = checklist.querySelectorAll('.due-soon-tooltip__item');
+    expect(items[0].querySelector('button')).toBeNull();
+    expect(checklist.querySelector('textarea')).toBeNull();
+
+    checkboxes[2].click();
+    fixture.detectChanges();
+    items = checklist.querySelectorAll('.due-soon-tooltip__item');
+    const note = checklist.querySelector(
+      '.due-soon-tooltip__notes textarea',
+    ) as HTMLTextAreaElement;
+    expect(items[2].querySelector('button')).toBeNull();
+    expect(note).toBeTruthy();
+    expect(note.value).toBe('');
+
+    let secondAction = items[1].querySelector('button') as HTMLButtonElement;
+    expect(secondAction.textContent?.trim()).toBe('Decline');
+    secondAction.click();
+    fixture.detectChanges();
+    items = checklist.querySelectorAll('.due-soon-tooltip__item');
+    secondAction = items[1].querySelector('button') as HTMLButtonElement;
+    expect(secondAction.textContent?.trim()).toBe('Reactivate');
+
+    secondAction.click();
+    fixture.detectChanges();
+    items = checklist.querySelectorAll('.due-soon-tooltip__item');
+    expect(items[1].querySelector('button')?.textContent?.trim()).toBe('Decline');
   });
 
   it('uses each task start and end week in every status tooltip Scheduled row', () => {

@@ -226,14 +226,32 @@ interface TimelineStatusTooltipTest {
   showActions?: boolean;
 }
 
+interface TimelineStatusTooltipChecklistItem {
+  checked: boolean;
+  declined: boolean;
+  id: string;
+  label: string;
+  noteValue?: string;
+  notes: boolean;
+}
+
 interface TimelineStatusTooltip {
   badgeLabel: string;
+  checklistItems?: TimelineStatusTooltipChecklistItem[];
   notes?: string;
   notePlaceholder?: string;
   notesPlaceholder?: string;
   otherPlaceholder?: string;
+  postResultRemovedTests?: TimelineStatusTooltipTest[];
+  postResultTests?: TimelineStatusTooltipTest[];
   removedTests?: TimelineStatusTooltipTest[];
+  resultColumns?: readonly [string, string, string];
+  resultNotice?: {
+    detail: string;
+    title: string;
+  };
   resultRows?: readonly ResultTableRow[];
+  resultTitle?: string;
   resultReviewStates?: Record<string, TimelineResultReviewState>;
   resultsReviewed?: boolean;
   resultsSubmitted?: boolean;
@@ -252,19 +270,14 @@ interface ActiveTimelineStatusTooltip {
   tooltip: TimelineStatusTooltip;
 }
 
-interface DueSoonChecklistItem {
-  completed: boolean;
-  declined: boolean;
-  id: string;
-  label: string;
-}
-
 interface ActiveDueSoonTooltip {
+  checklistItems?: TimelineStatusTooltipChecklistItem[];
   chipId: string;
-  items: DueSoonChecklistItem[];
+  removedTests: TimelineStatusTooltipTest[];
   notes: string;
   readOnly: boolean;
   scheduledWeekRange: string;
+  tests: TimelineStatusTooltipTest[];
   title: string;
 }
 
@@ -551,6 +564,125 @@ const CBC_RESULT_ROWS: readonly ResultTableRow[] = [
   { name: 'Monocytes', value: '5.0 %', range: '(2.0 - 8.0)' },
   { name: 'Eosinophils', value: '2.0 %', range: '(1.0 - 4.0)' },
   { name: 'Basophils', value: '0.5 %', range: '(0.0 - 1.0)' },
+];
+
+const FIRST_TRIMESTER_ULTRASOUND_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'Gestational age (ultrasound)', value: '8 weeks 4 days', range: '—' },
+  {
+    name: 'Estimated due date (EDD)',
+    value: 'June 15, 2026',
+    range: 'Based on 8w4d ultrasound (not consistent with LMP)',
+  },
+  { name: 'Pregnancy', value: 'Single, intrauterine', range: '—' },
+  { name: 'Fetal cardiac activity', value: 'Present', range: 'FHR 171 bpm' },
+  {
+    name: 'Crown–rump length (CRL)',
+    value: '2.08 cm',
+    range: 'Consistent with 8w4d (±5 days)',
+  },
+  { name: 'Yolk sac', value: 'Present', range: 'Normal' },
+  { name: 'Subchorionic hemorrhage', value: 'Not seen', range: '—' },
+  { name: 'Adnexa', value: 'Unremarkable', range: 'Ovaries normal; no adnexal mass' },
+  { name: 'Free fluid', value: 'Not seen', range: '—' },
+];
+
+const CELL_FREE_DNA_RESULT_ROWS: readonly ResultTableRow[] = [
+  {
+    name: 'MaterniT21 testing',
+    value: 'Negative for Trisomy 21, 13, 18;',
+    range: '—',
+  },
+];
+
+const GENETIC_SCREENING_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'Hemoglobin electrophoresis', value: 'Negative', range: '—' },
+  { name: 'Cystic fibrosis', value: 'Negative', range: '—' },
+  { name: 'Spinal muscular atrophy', value: 'Negative', range: '—' },
+];
+
+const FIRST_TRIMESTER_COUNSELING_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: true,
+    declined: false,
+    id: 'routine-care-testing',
+    label: 'Routine Care and Testing',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'diet-exercise-pregnancy',
+    label: 'Diet/Exercise in Pregnancy',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'prenatal-vitamins',
+    label: 'Recommend Prenatal vitamins',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'safe-medications',
+    label: 'Safe Medications',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'substance-use',
+    label: 'Substance Use',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'safety-precautions',
+    label: 'Safety/Precautions',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'warning-signs',
+    label: 'Warning Signs',
+    notes: false,
+  },
+];
+
+const THIRD_TRIMESTER_COUNSELING_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: false,
+    declined: false,
+    id: 'kick-counts',
+    label: 'Kick Counts',
+    notes: false,
+  },
+  {
+    checked: false,
+    declined: false,
+    id: 'pre-eclampsia-signs-symptoms',
+    label: 'Pre-eclampsia Signs/Symptoms',
+    notes: false,
+  },
+  {
+    checked: false,
+    declined: false,
+    id: 'birth-plans',
+    label: 'Birth Plans (if applicable)',
+    noteValue: '',
+    notes: true,
+  },
+  {
+    checked: false,
+    declined: false,
+    id: 'contraception-plans',
+    label: 'Contraception plans',
+    noteValue: '',
+    notes: true,
+  },
 ];
 
 const RESULT_TOOLTIPS: ResultTooltip[] = [
@@ -902,15 +1034,14 @@ const TIMELINE_STATUS_TOOLTIPS: Record<TimelineStatus, TimelineStatusTooltip> = 
   },
 };
 
-const DUE_SOON_CHECKLIST: ReadonlyArray<DueSoonChecklistItem> = [
-  { completed: true, declined: false, id: 'tdap', label: 'Tdap Vaccine' },
-  { completed: false, declined: false, id: 'flu', label: 'Flu Vaccine (Seasonal)' },
-  { completed: false, declined: false, id: 'hepatitis-b', label: 'Hepatitis B – Dose 2' },
-  { completed: false, declined: true, id: 'rhogam', label: 'RhoGAM (if Rh-negative)' },
+const THIRD_TRIMESTER_LAB_TESTS: ReadonlyArray<TimelineStatusTooltipTest> = [
+  { label: '1hr GTT', showActions: true },
+  { label: 'CBC', showActions: true },
+  { label: 'HIV antigen/antibody', showActions: true },
+  { label: 'Syphilis antibody', showActions: true },
 ];
 
-const DUE_SOON_DEFAULT_NOTES =
-  'Administered 0.5 mL IM in left deltoid. Patient tolerated well. Lot #TD9910.';
+const DUE_SOON_DEFAULT_NOTES = '';
 
 const INITIAL_TIMELINE: PregnancyTimeline = {
   currentWeek: 28,
@@ -1677,7 +1808,12 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   private timelineStatusTooltipInteractionActive = false;
   private readonly dueSoonTaskProgress = new Map<
     string,
-    { items: DueSoonChecklistItem[]; notes: string }
+    {
+      checklistItems?: TimelineStatusTooltipChecklistItem[];
+      notes: string;
+      removedTests: TimelineStatusTooltipTest[];
+      tests: TimelineStatusTooltipTest[];
+    }
   >();
   private deliveryChipTooltipSnapshot: DeliveryChipTooltipSnapshot | null = null;
   private timelineItemSequence = 0;
@@ -2263,39 +2399,93 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     );
   }
 
-  dueSoonCompletedCount(): number {
-    return this.activeDueSoonTooltip()?.items.filter((item) => item.completed).length ?? 0;
+  addDueSoonLabTest(value: string, input: HTMLInputElement): void {
+    const label = value.trim();
+
+    if (!label) {
+      return;
+    }
+
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      tests: [...active.tests, { label, showActions: true }],
+    }));
+    input.value = '';
+  }
+
+  dueSoonChecklistCompletedCount(): number {
+    return this.activeDueSoonTooltip()?.checklistItems?.filter((item) => item.checked).length ?? 0;
   }
 
   toggleDueSoonChecklistItem(itemId: string): void {
-    this.activeDueSoonTooltip.update((active) =>
-      active
-        ? {
-            ...active,
-            items: active.items.map((item) =>
-              item.id === itemId && !item.declined ? { ...item, completed: !item.completed } : item,
-            ),
-          }
-        : active,
-    );
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      checklistItems: active.checklistItems?.map((item) =>
+        item.id === itemId && !item.declined ? { ...item, checked: !item.checked } : item,
+      ),
+    }));
   }
 
   declineDueSoonChecklistItem(itemId: string): void {
-    this.activeDueSoonTooltip.update((active) =>
-      active
-        ? {
-            ...active,
-            items: active.items.map((item) =>
-              item.id === itemId ? { ...item, completed: false, declined: true } : item,
-            ),
-          }
-        : active,
-    );
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      checklistItems: active.checklistItems?.map((item) =>
+        item.id === itemId && !item.checked ? { ...item, declined: true } : item,
+      ),
+    }));
+  }
+
+  reactivateDueSoonChecklistItem(itemId: string): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      checklistItems: active.checklistItems?.map((item) =>
+        item.id === itemId ? { ...item, checked: false, declined: false } : item,
+      ),
+    }));
+  }
+
+  updateDueSoonChecklistNotes(itemId: string, event: Event): void {
+    const noteValue = (event.target as HTMLTextAreaElement).value;
+
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      checklistItems: active.checklistItems?.map((item) =>
+        item.id === itemId ? { ...item, noteValue } : item,
+      ),
+    }));
+  }
+
+  setDueSoonLabTestState(
+    test: TimelineStatusTooltipTest,
+    actionState: TimelineStatusTooltipTest['actionState'],
+  ): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      tests: active.tests.map((item) => (item === test ? { ...item, actionState } : item)),
+    }));
+  }
+
+  declineDueSoonLabTest(test: TimelineStatusTooltipTest): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      tests: [
+        ...active.tests.filter((item) => item !== test),
+        { ...test, actionState: 'declined' },
+      ],
+    }));
+  }
+
+  removeDueSoonLabTest(test: TimelineStatusTooltipTest): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      removedTests: [...active.removedTests, { ...test, actionState: 'active' }],
+      tests: active.tests.filter((item) => item !== test),
+    }));
   }
 
   updateDueSoonNotes(event: Event): void {
     const notes = (event.target as HTMLTextAreaElement).value;
-    this.activeDueSoonTooltip.update((active) => (active ? { ...active, notes } : active));
+    this.updateDueSoonTooltip((active) => ({ ...active, notes }));
   }
 
   saveDueSoonTaskProgress(): void {
@@ -2303,8 +2493,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     if (active) {
       this.dueSoonTaskProgress.set(active.chipId, {
-        items: active.items.map((item) => ({ ...item })),
+        checklistItems: active.checklistItems?.map((item) => ({ ...item })),
         notes: active.notes,
+        removedTests: active.removedTests.map((test) => ({ ...test })),
+        tests: active.tests.map((test) => ({ ...test })),
       });
     }
 
@@ -2360,6 +2552,9 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const sourceTooltip = TIMELINE_STATUS_TOOLTIPS[chip.status];
     const tooltip: TimelineStatusTooltip = {
       ...sourceTooltip,
+      checklistItems: sourceTooltip.checklistItems?.map((item) => ({ ...item })),
+      postResultRemovedTests: sourceTooltip.postResultRemovedTests?.map((test) => ({ ...test })),
+      postResultTests: sourceTooltip.postResultTests?.map((test) => ({ ...test })),
       removedTests: sourceTooltip.removedTests?.map((test) => ({ ...test })),
       schedule: sourceTooltip.schedule.map((row) => ({
         ...row,
@@ -2371,6 +2566,55 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tests: sourceTooltip.tests?.map((test) => ({ ...test })),
       title: chip.label,
     };
+    if (chip.id === 'labs-3') {
+      tooltip.tests = [{ label: 'Group B Strep Prenatal', showActions: true }];
+    }
+    if (chip.id === 'aneuploidy-1') {
+      tooltip.notes =
+        'First trimester limited ultrasound reviewed. Ultrasound dating is not consistent with LMP; EDD updated to June 15, 2026 based on the 8w4d ultrasound.';
+      tooltip.resultColumns = ['Finding', 'Result', 'Reference / Interpretation'];
+      tooltip.resultNotice = {
+        title: 'Dating Update: Ultrasound gestational age is not consistent with LMP.',
+        detail: 'EDD updated to June 15, 2026 (based on 8w4d ultrasound).',
+      };
+      tooltip.resultRows = FIRST_TRIMESTER_ULTRASOUND_RESULT_ROWS;
+      tooltip.resultTitle = 'OB first trimester limited ultrasound';
+    }
+    if (chip.id === 'aneuploidy-cell-free-dna') {
+      tooltip.notes =
+        'MaterniT21 cell-free DNA screening reviewed. Results are negative for Trisomy 21, 13, and 18.';
+      tooltip.resultColumns = ['Finding', 'Result', 'Reference / Interpretation'];
+      tooltip.resultRows = CELL_FREE_DNA_RESULT_ROWS;
+    }
+    if (chip.id === 'aneuploidy-maternal-serum-afp') {
+      tooltip.notesPlaceholder = 'Add clinical notes about why Maternal serum AFP was declined...';
+      tooltip.tests = [
+        {
+          actionState: 'declined',
+          label: 'Maternal serum AFP',
+          showActions: true,
+        },
+      ];
+    }
+    if (chip.id === 'genetic-screening-1') {
+      tooltip.notes =
+        'Genetic carrier screening results reviewed. Hemoglobin electrophoresis, cystic fibrosis, and spinal muscular atrophy screens are negative.';
+      tooltip.postResultTests = [
+        {
+          actionState: 'declined',
+          label: 'Fragile X',
+          showActions: true,
+        },
+      ];
+      tooltip.postResultRemovedTests = [];
+      tooltip.resultRows = GENETIC_SCREENING_RESULT_ROWS;
+    }
+    if (chip.id === 'counseling-first-trimester') {
+      tooltip.checklistItems = FIRST_TRIMESTER_COUNSELING_CHECKLIST.map((item) => ({ ...item }));
+      tooltip.notes =
+        'First trimester counseling completed. Routine prenatal care, nutrition, safe medications, substance use, safety precautions, and warning signs were reviewed with the patient.';
+      tooltip.resultRows = undefined;
+    }
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
     const width = Math.min(preferredWidth, Math.max(260, window.innerWidth - 24));
@@ -2419,7 +2663,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   private showDueSoonTooltip(chip: TimelineChip, trigger: HTMLElement, readOnly: boolean): void {
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
-    const preferredHeight = 470;
+    const preferredHeight = 657;
     const width = Math.min(preferredWidth, Math.max(280, window.innerWidth - 24));
     const spaceBelow = window.innerHeight - triggerBounds.bottom - 12;
     const spaceAbove = triggerBounds.top - 12;
@@ -2440,6 +2684,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         ? triggerBounds.bottom + 10
         : Math.max(12, triggerBounds.top - maxHeight - 10);
     const savedProgress = this.dueSoonTaskProgress.get(chip.id);
+    const isThirdTrimesterCounseling = chip.id === 'counseling-third-trimester';
 
     this.timelineStatusTooltipPosition.set({
       left,
@@ -2451,13 +2696,27 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.timelineStatusTooltipMaxHeight.set(maxHeight);
     this.activeTimelineStatusTooltip.set(null);
     this.activeDueSoonTooltip.set({
+      checklistItems: isThirdTrimesterCounseling
+        ? (savedProgress?.checklistItems ?? THIRD_TRIMESTER_COUNSELING_CHECKLIST).map((item) => ({
+            ...item,
+          }))
+        : undefined,
       chipId: chip.id,
-      items: (savedProgress?.items ?? DUE_SOON_CHECKLIST).map((item) => ({ ...item })),
       notes: savedProgress?.notes ?? DUE_SOON_DEFAULT_NOTES,
       readOnly,
+      removedTests: savedProgress?.removedTests.map((test) => ({ ...test })) ?? [],
       scheduledWeekRange: this.timelineScheduledWeekRange(chip.startWeek, chip.endWeek),
+      tests: isThirdTrimesterCounseling
+        ? []
+        : (savedProgress?.tests ?? THIRD_TRIMESTER_LAB_TESTS).map((test) => ({ ...test })),
       title: chip.label,
     });
+  }
+
+  private updateDueSoonTooltip(
+    update: (active: ActiveDueSoonTooltip) => ActiveDueSoonTooltip,
+  ): void {
+    this.activeDueSoonTooltip.update((active) => (active ? update(active) : active));
   }
 
   timelineScheduledWeekRange(startWeek: number, endWeek: number): string {
@@ -2623,6 +2882,51 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     input.value = '';
   }
 
+  timelineTooltipChecklistCompletedCount(): number {
+    return (
+      this.activeTimelineStatusTooltip()?.tooltip.checklistItems?.filter((item) => item.checked)
+        .length ?? 0
+    );
+  }
+
+  toggleTimelineTooltipChecklistItem(itemId: string): void {
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      checklistItems: tooltip.checklistItems?.map((item) =>
+        item.id === itemId && !item.declined ? { ...item, checked: !item.checked } : item,
+      ),
+    }));
+  }
+
+  declineTimelineTooltipChecklistItem(itemId: string): void {
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      checklistItems: tooltip.checklistItems?.map((item) =>
+        item.id === itemId && !item.checked ? { ...item, declined: true } : item,
+      ),
+    }));
+  }
+
+  reactivateTimelineTooltipChecklistItem(itemId: string): void {
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      checklistItems: tooltip.checklistItems?.map((item) =>
+        item.id === itemId ? { ...item, checked: false, declined: false } : item,
+      ),
+    }));
+  }
+
+  updateTimelineTooltipChecklistNotes(itemId: string, event: Event): void {
+    const noteValue = (event.target as HTMLTextAreaElement).value;
+
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      checklistItems: tooltip.checklistItems?.map((item) =>
+        item.id === itemId ? { ...item, noteValue } : item,
+      ),
+    }));
+  }
+
   setTimelineTooltipTestState(
     test: TimelineStatusTooltipTest,
     actionState: TimelineStatusTooltipTest['actionState'],
@@ -2634,6 +2938,77 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       ),
       tests: tooltip.tests?.map((item) => (item === test ? { ...item, actionState } : item)),
     }));
+  }
+
+  setTimelineTooltipPostResultTestState(
+    test: TimelineStatusTooltipTest,
+    actionState: TimelineStatusTooltipTest['actionState'],
+  ): void {
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      postResultTests: tooltip.postResultTests?.map((item) =>
+        item === test ? { ...item, actionState } : item,
+      ),
+    }));
+  }
+
+  declineTimelineTooltipPostResultTest(test: TimelineStatusTooltipTest, fromRemoved = false): void {
+    this.updateTimelineTooltip((tooltip) => {
+      if (fromRemoved) {
+        return {
+          ...tooltip,
+          postResultRemovedTests: tooltip.postResultRemovedTests?.filter((item) => item !== test),
+          postResultTests: [
+            ...(tooltip.postResultTests ?? []),
+            { ...test, actionState: 'declined' as const },
+          ],
+        };
+      }
+
+      return {
+        ...tooltip,
+        postResultTests: [
+          ...(tooltip.postResultTests?.filter((item) => item !== test) ?? []),
+          { ...test, actionState: 'declined' as const },
+        ],
+      };
+    });
+  }
+
+  reactivateTimelineTooltipPostResultTest(
+    test: TimelineStatusTooltipTest,
+    fromRemoved = false,
+  ): void {
+    if (!fromRemoved) {
+      this.setTimelineTooltipPostResultTestState(test, 'active');
+      return;
+    }
+
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      postResultRemovedTests: tooltip.postResultRemovedTests?.filter((item) => item !== test),
+      postResultTests: [...(tooltip.postResultTests ?? []), { ...test, actionState: 'active' }],
+    }));
+  }
+
+  removeTimelineTooltipPostResultTest(test: TimelineStatusTooltipTest, fromRemoved = false): void {
+    this.updateTimelineTooltip((tooltip) => {
+      if (fromRemoved) {
+        return {
+          ...tooltip,
+          postResultRemovedTests: tooltip.postResultRemovedTests?.filter((item) => item !== test),
+        };
+      }
+
+      return {
+        ...tooltip,
+        postResultRemovedTests: [
+          ...(tooltip.postResultRemovedTests ?? []),
+          { ...test, actionState: 'active' },
+        ],
+        postResultTests: tooltip.postResultTests?.filter((item) => item !== test),
+      };
+    });
   }
 
   declineTimelineTooltipTest(test: TimelineStatusTooltipTest, fromRemoved = false): void {

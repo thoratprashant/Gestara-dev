@@ -2002,61 +2002,162 @@
 
           <div class="due-soon-tooltip__divider"></div>
 
-          <section class="due-soon-tooltip__checklist" aria-label="Checklist items">
-            <header>
-              <h3>Checklist Items</h3>
-              <strong
-                >{{ dueSoonCompletedCount() }} of
-                {{ dueSoonTooltip.items.length }} completed</strong
-              >
-            </header>
+          <section
+            class="due-soon-tooltip__checklist"
+            [class.due-soon-tooltip__checklist--items]="dueSoonTooltip.checklistItems"
+            aria-label="Checklist items"
+          >
+            @if (dueSoonTooltip.checklistItems; as checklistItems) {
+              <header>
+                <h3>Checklist Items</h3>
+                <strong>
+                  {{ dueSoonChecklistCompletedCount() }} of {{ checklistItems.length }} completed
+                </strong>
+              </header>
 
-            <div class="due-soon-tooltip__items">
-              @for (item of dueSoonTooltip.items; track item.id) {
-                <div
-                  class="due-soon-tooltip__item"
-                  [class.due-soon-tooltip__item--declined]="item.declined"
-                >
-                  <label>
-                    <input
-                      type="checkbox"
-                      [checked]="item.completed"
-                      [disabled]="item.declined || dueSoonTooltip.readOnly"
-                      (change)="toggleDueSoonChecklistItem(item.id)"
-                    />
-                    <span class="due-soon-tooltip__checkbox" aria-hidden="true"></span>
-                    <span>{{ item.label }}</span>
-                  </label>
+              <div class="due-soon-tooltip__items">
+                @for (item of checklistItems; track item.id) {
+                  <div
+                    class="due-soon-tooltip__item"
+                    [class.due-soon-tooltip__item--declined]="item.declined"
+                  >
+                    <label>
+                      <input
+                        type="checkbox"
+                        [checked]="item.checked"
+                        [disabled]="item.declined || dueSoonTooltip.readOnly"
+                        (change)="toggleDueSoonChecklistItem(item.id)"
+                      />
+                      <span class="due-soon-tooltip__checkbox" aria-hidden="true"></span>
+                      <span>{{ item.label }}</span>
+                    </label>
 
-                  @if (item.declined) {
-                    <span class="due-soon-tooltip__declined">Declined</span>
-                  } @else if (!item.completed) {
-                    <button type="button" (click)="declineDueSoonChecklistItem(item.id)">
-                      Decline
-                    </button>
+                    @if (item.declined) {
+                      <button
+                        class="timeline-status-tooltip__reactivate"
+                        type="button"
+                        (click)="reactivateDueSoonChecklistItem(item.id)"
+                      >
+                        Reactivate
+                      </button>
+                    } @else if (!item.checked) {
+                      <button type="button" (click)="declineDueSoonChecklistItem(item.id)">
+                        Decline
+                      </button>
+                    }
+                  </div>
+
+                  @if (item.checked && item.notes) {
+                    <label class="due-soon-tooltip__notes">
+                      <span>Notes</span>
+                      <textarea
+                        rows="2"
+                        [readOnly]="dueSoonTooltip.readOnly"
+                        [value]="item.noteValue || ''"
+                        placeholder="Add notes..."
+                        (input)="updateDueSoonChecklistNotes(item.id, $event)"
+                      ></textarea>
+                    </label>
                   }
-                </div>
-
-                @if (item.completed) {
-                  <label class="due-soon-tooltip__notes">
-                    <span>Notes (Required)</span>
-                    <textarea
-                      rows="2"
-                      [readOnly]="dueSoonTooltip.readOnly"
-                      [value]="dueSoonTooltip.notes"
-                      (input)="updateDueSoonNotes($event)"
-                    ></textarea>
-                  </label>
                 }
-              }
-            </div>
+              </div>
+            } @else {
+              <h3>Lab Tests:</h3>
+              <div class="timeline-status-tooltip__test-list">
+                @for (test of dueSoonTooltip.tests; track test.label) {
+                  <div
+                    class="timeline-status-tooltip__test"
+                    [class.timeline-status-tooltip__test--declined]="
+                      test.actionState === 'declined'
+                    "
+                    [class.timeline-status-tooltip__test--ordered]="test.actionState === 'ordered'"
+                  >
+                    <span
+                      class="timeline-status-tooltip__icon"
+                      data-icon="test-tube"
+                      aria-hidden="true"
+                    ></span>
+                    <div class="timeline-status-tooltip__test-content">
+                      <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
+                    </div>
+                    <div class="timeline-status-tooltip__test-actions">
+                      @if (test.actionState === 'declined') {
+                        <button
+                          class="timeline-status-tooltip__reactivate"
+                          type="button"
+                          (click)="setDueSoonLabTestState(test, 'active')"
+                        >
+                          Reactivate
+                        </button>
+                      } @else {
+                        @if (test.actionState !== 'ordered') {
+                          <button
+                            class="timeline-status-tooltip__order"
+                            type="button"
+                            (click)="setDueSoonLabTestState(test, 'ordered')"
+                          >
+                            Order
+                          </button>
+                          <button
+                            class="timeline-status-tooltip__decline"
+                            type="button"
+                            (click)="declineDueSoonLabTest(test)"
+                          >
+                            Decline
+                          </button>
+                        }
+                        <button
+                          class="timeline-status-tooltip__remove"
+                          type="button"
+                          aria-label="Remove test"
+                          (click)="removeDueSoonLabTest(test)"
+                        ></button>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <div class="timeline-status-tooltip__field">
+                <label for="due-soon-tooltip-other-test">Other</label>
+                <input
+                  #dueSoonOtherTestInput
+                  id="due-soon-tooltip-other-test"
+                  class="timeline-status-tooltip__input"
+                  type="text"
+                  placeholder="Enter test name..."
+                  (keydown.enter)="
+                    addDueSoonLabTest(dueSoonOtherTestInput.value, dueSoonOtherTestInput);
+                    $event.preventDefault()
+                  "
+                />
+                <button
+                  class="timeline-status-tooltip__enter-hint"
+                  type="button"
+                  aria-label="Add lab test"
+                  (click)="addDueSoonLabTest(dueSoonOtherTestInput.value, dueSoonOtherTestInput)"
+                >
+                  &#x21b5; Enter
+                </button>
+              </div>
+
+              <label
+                class="timeline-status-tooltip__notes timeline-status-tooltip__notes--editable"
+              >
+                <span>Notes:</span>
+                <textarea
+                  rows="3"
+                  [readOnly]="dueSoonTooltip.readOnly"
+                  [value]="dueSoonTooltip.notes"
+                  placeholder="Add clinical notes about ordered, declined, or previously tested lab items..."
+                  (input)="updateDueSoonNotes($event)"
+                ></textarea>
+              </label>
+            }
           </section>
 
-          <div class="due-soon-tooltip__divider due-soon-tooltip__divider--footer"></div>
-
           <footer class="due-soon-tooltip__footer">
-            <button type="button" (click)="saveDueSoonTaskProgress()">Save Progress</button>
-            <button type="button" (click)="completeDueSoonTask()">Complete Task</button>
+            <button type="button" (click)="saveDueSoonTaskProgress()">Submit</button>
           </footer>
         </div>
       </aside>
@@ -2143,6 +2244,65 @@
           </div>
 
           <div class="timeline-status-tooltip__divider"></div>
+
+          @if (activeStatusTooltip.tooltip.checklistItems; as checklistItems) {
+            <section class="due-soon-tooltip__checklist" aria-label="Checklist items">
+              <header>
+                <h3>Checklist Items</h3>
+                <strong>
+                  {{ timelineTooltipChecklistCompletedCount() }} of
+                  {{ checklistItems.length }} completed
+                </strong>
+              </header>
+
+              <div class="due-soon-tooltip__items">
+                @for (item of checklistItems; track item.id) {
+                  <div
+                    class="due-soon-tooltip__item"
+                    [class.due-soon-tooltip__item--declined]="item.declined"
+                  >
+                    <label>
+                      <input
+                        type="checkbox"
+                        [checked]="item.checked"
+                        [disabled]="item.declined || activeStatusTooltip.readOnly"
+                        (change)="toggleTimelineTooltipChecklistItem(item.id)"
+                      />
+                      <span class="due-soon-tooltip__checkbox" aria-hidden="true"></span>
+                      <span>{{ item.label }}</span>
+                    </label>
+
+                    @if (item.declined) {
+                      <button
+                        class="timeline-status-tooltip__reactivate"
+                        type="button"
+                        (click)="reactivateTimelineTooltipChecklistItem(item.id)"
+                      >
+                        Reactivate
+                      </button>
+                    } @else if (!item.checked) {
+                      <button type="button" (click)="declineTimelineTooltipChecklistItem(item.id)">
+                        Decline
+                      </button>
+                    }
+                  </div>
+
+                  @if (item.checked && item.notes) {
+                    <label class="due-soon-tooltip__notes">
+                      <span>Notes</span>
+                      <textarea
+                        rows="2"
+                        [readOnly]="activeStatusTooltip.readOnly"
+                        [value]="item.noteValue || ''"
+                        placeholder="Add notes..."
+                        (input)="updateTimelineTooltipChecklistNotes(item.id, $event)"
+                      ></textarea>
+                    </label>
+                  }
+                }
+              </div>
+            </section>
+          }
 
           @if (activeStatusTooltip.tooltip.resultsSubmitted) {
             <section class="timeline-status-tooltip__received-results">
@@ -2501,6 +2661,18 @@
                           </button>
                         }
                       }
+                      <button
+                        class="timeline-status-tooltip__remove"
+                        type="button"
+                        [attr.aria-label]="'Remove ' + test.label + ' permanently'"
+                        (click)="removeTimelineTooltipTest(test, true)"
+                      >
+                        <span
+                          class="timeline-status-tooltip__icon"
+                          data-icon="close"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
                     </div>
                   </div>
                 }
@@ -2565,15 +2737,42 @@
           }
 
           @if (activeStatusTooltip.tooltip.resultRows; as resultRows) {
+            @if (activeStatusTooltip.tooltip.resultTitle; as resultTitle) {
+              <p class="timeline-status-tooltip__result-title">
+                <strong>Test Name:</strong> {{ resultTitle }}
+              </p>
+            }
+
+            @if (activeStatusTooltip.tooltip.resultNotice; as resultNotice) {
+              <div class="timeline-status-tooltip__result-notice" role="note">
+                <span class="timeline-status-tooltip__result-notice-icon" aria-hidden="true"
+                  >i</span
+                >
+                <div>
+                  <strong>{{ resultNotice.title }}</strong>
+                  <span>{{ resultNotice.detail }}</span>
+                </div>
+              </div>
+            }
+
             <div
               class="result-tooltip__table timeline-status-tooltip__result-table"
+              [class.timeline-status-tooltip__result-table--findings]="
+                activeStatusTooltip.tooltip.resultColumns
+              "
               role="table"
               aria-label="Complete Blood Count results"
             >
               <div class="result-tooltip__table-head" role="row">
-                <span role="columnheader">Test Name</span>
-                <span role="columnheader">Value</span>
-                <span role="columnheader">Ref. Range</span>
+                <span role="columnheader">
+                  {{ activeStatusTooltip.tooltip.resultColumns?.[0] || 'Test Name' }}
+                </span>
+                <span role="columnheader">
+                  {{ activeStatusTooltip.tooltip.resultColumns?.[1] || 'Value' }}
+                </span>
+                <span role="columnheader">
+                  {{ activeStatusTooltip.tooltip.resultColumns?.[2] || 'Ref. Range' }}
+                </span>
               </div>
               <div class="result-tooltip__table-body" role="rowgroup">
                 @for (row of resultRows; track row.name) {
@@ -2594,6 +2793,126 @@
                 }
               </div>
             </div>
+          }
+
+          @if (activeStatusTooltip.tooltip.postResultTests?.length) {
+            <section class="timeline-status-tooltip__tests" aria-label="Lab tests">
+              <h3>Lab Tests:</h3>
+              <div class="timeline-status-tooltip__test-list">
+                @for (test of activeStatusTooltip.tooltip.postResultTests; track test.label) {
+                  <div
+                    class="timeline-status-tooltip__test"
+                    [class.timeline-status-tooltip__test--declined]="
+                      test.actionState === 'declined'
+                    "
+                  >
+                    <span
+                      class="timeline-status-tooltip__icon"
+                      data-icon="test-tube"
+                      aria-hidden="true"
+                    ></span>
+                    <div class="timeline-status-tooltip__test-content">
+                      <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
+                    </div>
+                    @if (test.showActions) {
+                      <div class="timeline-status-tooltip__test-actions">
+                        @if (test.actionState === 'declined') {
+                          <button
+                            class="timeline-status-tooltip__reactivate"
+                            type="button"
+                            (click)="reactivateTimelineTooltipPostResultTest(test)"
+                          >
+                            Reactivate
+                          </button>
+                        } @else {
+                          <button
+                            class="timeline-status-tooltip__decline"
+                            type="button"
+                            (click)="declineTimelineTooltipPostResultTest(test)"
+                          >
+                            Decline
+                          </button>
+                          <button
+                            class="timeline-status-tooltip__remove"
+                            type="button"
+                            aria-label="Remove test"
+                            (click)="removeTimelineTooltipPostResultTest(test)"
+                          >
+                            <span
+                              class="timeline-status-tooltip__icon"
+                              data-icon="close"
+                              aria-hidden="true"
+                            ></span>
+                          </button>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            </section>
+          }
+
+          @if (activeStatusTooltip.tooltip.postResultRemovedTests?.length) {
+            <section
+              class="timeline-status-tooltip__tests timeline-status-tooltip__removed-orders"
+              aria-label="Removed orders"
+            >
+              <h3>Removed Orders:</h3>
+              <div class="timeline-status-tooltip__test-list">
+                @for (
+                  test of activeStatusTooltip.tooltip.postResultRemovedTests;
+                  track test.label
+                ) {
+                  <div
+                    class="timeline-status-tooltip__test"
+                    [class.timeline-status-tooltip__test--declined]="
+                      test.actionState === 'declined'
+                    "
+                  >
+                    <span
+                      class="timeline-status-tooltip__icon"
+                      data-icon="test-tube"
+                      aria-hidden="true"
+                    ></span>
+                    <div class="timeline-status-tooltip__test-content">
+                      <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
+                    </div>
+                    <div class="timeline-status-tooltip__test-actions">
+                      @if (test.actionState === 'declined') {
+                        <button
+                          class="timeline-status-tooltip__reactivate"
+                          type="button"
+                          (click)="reactivateTimelineTooltipPostResultTest(test, true)"
+                        >
+                          Reactivate
+                        </button>
+                      } @else {
+                        <button
+                          class="timeline-status-tooltip__decline"
+                          type="button"
+                          (click)="declineTimelineTooltipPostResultTest(test, true)"
+                        >
+                          Decline
+                        </button>
+                      }
+                      <button
+                        class="timeline-status-tooltip__remove"
+                        type="button"
+                        [attr.aria-label]="'Remove ' + test.label + ' permanently'"
+                        (click)="removeTimelineTooltipPostResultTest(test, true)"
+                      >
+                        <span
+                          class="timeline-status-tooltip__icon"
+                          data-icon="close"
+                          aria-hidden="true"
+                        ></span>
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            </section>
           }
 
           @if (activeStatusTooltip.tooltip.notes) {
