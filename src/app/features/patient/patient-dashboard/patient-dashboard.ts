@@ -235,13 +235,27 @@ interface TimelineStatusTooltipChecklistItem {
   notes: boolean;
 }
 
+type TimelineScreeningResponse = 'negative' | 'positive';
+
+interface TimelineStatusTooltipScreeningRow {
+  id: string;
+  interpretation?: string;
+  kind: 'choice' | 'score';
+  label: string;
+  response?: TimelineScreeningResponse;
+  score?: number;
+}
+
 interface TimelineStatusTooltip {
   badgeLabel: string;
+  checklistPlacement?: 'default' | 'tests';
   checklistItems?: TimelineStatusTooltipChecklistItem[];
   notes?: string;
   notePlaceholder?: string;
   notesPlaceholder?: string;
   otherPlaceholder?: string;
+  postResultAllowOrder?: boolean;
+  postResultNotesPlaceholder?: string;
   postResultRemovedTests?: TimelineStatusTooltipTest[];
   postResultTests?: TimelineStatusTooltipTest[];
   removedTests?: TimelineStatusTooltipTest[];
@@ -256,7 +270,10 @@ interface TimelineStatusTooltip {
   resultsReviewed?: boolean;
   resultsSubmitted?: boolean;
   schedule: TimelineStatusTooltipScheduleRow[];
+  screeningRows?: TimelineStatusTooltipScreeningRow[];
+  screeningTitle?: string;
   showBulkActions?: boolean;
+  showSubmitFooter?: boolean;
   submitLabel?: string;
   status: TimelineStatus;
   subtitle: string;
@@ -277,6 +294,8 @@ interface ActiveDueSoonTooltip {
   notes: string;
   readOnly: boolean;
   scheduledWeekRange: string;
+  screeningRows?: TimelineStatusTooltipScreeningRow[];
+  screeningTitle?: string;
   tests: TimelineStatusTooltipTest[];
   title: string;
 }
@@ -600,6 +619,17 @@ const GENETIC_SCREENING_RESULT_ROWS: readonly ResultTableRow[] = [
   { name: 'Spinal muscular atrophy', value: 'Negative', range: '—' },
 ];
 
+const PRE_ECLAMPSIA_SCREENING_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'CBC (Hgb)', value: '12.6 g/dL', range: '\u226511.0 (3rd trimester)' },
+  { name: 'CBC (Platelets)', value: '248 K/uL', range: '150 \u2013 400' },
+  { name: 'CMP (Creatinine)', value: '0.72 mg/dL', range: '0.50 \u2013 1.10' },
+  { name: 'CMP (AST)', value: '18 U/L', range: '10 \u2013 40' },
+  { name: 'CMP (ALT)', value: '14 U/L', range: '7 \u2013 56' },
+  { name: 'LDH', value: '169 U/L', range: '100 \u2013 220' },
+  { name: 'Uric Acid', value: '4.2 mg/dL', range: '2.6 \u2013 6.0' },
+  { name: 'Protein/Creatinine Ratio (Urine)', value: '0.11', range: '< 0.30' },
+];
+
 const FIRST_TRIMESTER_COUNSELING_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
   {
     checked: true,
@@ -682,6 +712,84 @@ const THIRD_TRIMESTER_COUNSELING_CHECKLIST: readonly TimelineStatusTooltipCheckl
     label: 'Contraception plans',
     noteValue: '',
     notes: true,
+  },
+];
+
+const IMMUNIZATION_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: true,
+    declined: false,
+    id: 'influenza',
+    label: 'Influenza',
+    notes: false,
+  },
+  {
+    checked: false,
+    declined: false,
+    id: 'covid',
+    label: 'COVID',
+    notes: false,
+  },
+];
+
+const CONFIRM_CEPHALIC_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: false,
+    declined: false,
+    id: 'cephalic',
+    label: 'cephalic',
+    noteValue: '',
+    notes: true,
+  },
+];
+
+const SCHEDULE_IOL_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: false,
+    declined: false,
+    id: 'scheduled',
+    label: 'scheduled',
+    noteValue: '',
+    notes: true,
+  },
+];
+
+const FIRST_TRIMESTER_SCREENING_ROWS: readonly TimelineStatusTooltipScreeningRow[] = [
+  {
+    id: 'epds',
+    interpretation: '(0–30; ≥10 consider further evaluation)',
+    kind: 'score',
+    label: 'EPDS (Edinburgh Postnatal Depression Scale)',
+    score: 3,
+  },
+  {
+    id: 'intimate-partner-violence',
+    kind: 'choice',
+    label: 'Intimate Partner Violence Screening',
+    response: 'negative',
+  },
+  {
+    id: 'food-insecurity',
+    kind: 'choice',
+    label: 'Food Insecurity Screening',
+    response: 'negative',
+  },
+  {
+    id: 'transportation-insecurity',
+    kind: 'choice',
+    label: 'Transportation Insecurity Screening',
+    response: 'negative',
+  },
+  {
+    id: 'housing-insecurity',
+    kind: 'choice',
+    label: 'Housing Insecurity Screening',
+    response: 'negative',
+  },
+  {
+    id: 'substance-use',
+    kind: 'choice',
+    label: 'Substance Use Screening',
   },
 ];
 
@@ -1812,6 +1920,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       checklistItems?: TimelineStatusTooltipChecklistItem[];
       notes: string;
       removedTests: TimelineStatusTooltipTest[];
+      screeningRows?: TimelineStatusTooltipScreeningRow[];
       tests: TimelineStatusTooltipTest[];
     }
   >();
@@ -2455,6 +2564,35 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }));
   }
 
+  updateDueSoonScreeningScore(rowId: string, event: Event): void {
+    const rawValue = (event.target as HTMLInputElement).value;
+    const parsedValue = Number(rawValue);
+    const score =
+      rawValue === '' || Number.isNaN(parsedValue) ? undefined : this.clamp(parsedValue, 0, 30);
+
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      screeningRows: active.screeningRows?.map((row) =>
+        row.id === rowId ? { ...row, score } : row,
+      ),
+    }));
+  }
+
+  toggleDueSoonScreeningResponse(rowId: string, response: string): void {
+    if (response !== 'negative' && response !== 'positive') {
+      return;
+    }
+
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      screeningRows: active.screeningRows?.map((row) =>
+        row.id === rowId
+          ? { ...row, response: row.response === response ? undefined : response }
+          : row,
+      ),
+    }));
+  }
+
   setDueSoonLabTestState(
     test: TimelineStatusTooltipTest,
     actionState: TimelineStatusTooltipTest['actionState'],
@@ -2496,6 +2634,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         checklistItems: active.checklistItems?.map((item) => ({ ...item })),
         notes: active.notes,
         removedTests: active.removedTests.map((test) => ({ ...test })),
+        screeningRows: active.screeningRows?.map((row) => ({ ...row })),
         tests: active.tests.map((test) => ({ ...test })),
       });
     }
@@ -2563,6 +2702,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
             ? this.timelineScheduledWeekRange(chip.startWeek, chip.endWeek)
             : row.value,
       })),
+      screeningRows: sourceTooltip.screeningRows?.map((row) => ({ ...row })),
       tests: sourceTooltip.tests?.map((test) => ({ ...test })),
       title: chip.label,
     };
@@ -2615,6 +2755,55 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         'First trimester counseling completed. Routine prenatal care, nutrition, safe medications, substance use, safety precautions, and warning signs were reviewed with the patient.';
       tooltip.resultRows = undefined;
     }
+    if (chip.id === 'behavioral-screening-first-trimester') {
+      tooltip.notesPlaceholder = 'Add clinical notes about the screening results...';
+      tooltip.screeningRows = FIRST_TRIMESTER_SCREENING_ROWS.map((row) => ({ ...row }));
+      tooltip.screeningTitle = 'Prenatal Screening';
+      tooltip.tests = undefined;
+    }
+    if (chip.id === 'immunization-influenza-covid') {
+      tooltip.notes =
+        'Influenza immunization completed. COVID immunization remains pending and was reviewed with the patient.';
+      tooltip.checklistItems = IMMUNIZATION_CHECKLIST.map((item) => ({ ...item }));
+      tooltip.resultRows = undefined;
+      tooltip.showSubmitFooter = true;
+    }
+    if (
+      chip.id === 'delivery-planning-confirm-cephalic' ||
+      chip.id === 'delivery-planning-schedule-iol'
+    ) {
+      tooltip.checklistItems = (
+        chip.id === 'delivery-planning-confirm-cephalic'
+          ? CONFIRM_CEPHALIC_CHECKLIST
+          : SCHEDULE_IOL_CHECKLIST
+      ).map((item) => ({ ...item }));
+      tooltip.checklistPlacement = 'tests';
+      tooltip.notesPlaceholder = undefined;
+      tooltip.otherPlaceholder = undefined;
+      tooltip.tests = undefined;
+    }
+    if (chip.id === 'home-blood-pressure-monitor') {
+      tooltip.notes = undefined;
+      tooltip.postResultAllowOrder = true;
+      tooltip.postResultNotesPlaceholder =
+        'Add clinical notes about ordered, declined, or previously monitored blood pressure items...';
+      tooltip.postResultRemovedTests = [];
+      tooltip.postResultTests = [
+        {
+          actionState: 'active',
+          label: 'Ambulatory blood pressure monitor',
+          showActions: true,
+        },
+      ];
+      tooltip.resultRows = undefined;
+      tooltip.showSubmitFooter = true;
+    }
+    if (chip.id === 'screening-pre-eclampsia-labs') {
+      tooltip.notes =
+        'Pre-eclampsia screening laboratory results reviewed. CBC, CMP, LDH, uric acid, and urine protein/creatinine ratio are within the listed reference ranges.';
+      tooltip.resultRows = PRE_ECLAMPSIA_SCREENING_RESULT_ROWS;
+      tooltip.resultTitle = 'Pre-eclampsia Screening Labs';
+    }
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
     const width = Math.min(preferredWidth, Math.max(260, window.innerWidth - 24));
@@ -2624,7 +2813,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       late: 650,
       'not-reviewed': 380,
       ordered: 440,
-      incomplete: 400,
+      incomplete: 657,
       'due-soon': 380,
       declined: 657,
     };
@@ -2685,6 +2874,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         : Math.max(12, triggerBounds.top - maxHeight - 10);
     const savedProgress = this.dueSoonTaskProgress.get(chip.id);
     const isThirdTrimesterCounseling = chip.id === 'counseling-third-trimester';
+    const isThirdTrimesterScreening = chip.id === 'behavioral-screening-third-trimester';
 
     this.timelineStatusTooltipPosition.set({
       left,
@@ -2706,9 +2896,16 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       readOnly,
       removedTests: savedProgress?.removedTests.map((test) => ({ ...test })) ?? [],
       scheduledWeekRange: this.timelineScheduledWeekRange(chip.startWeek, chip.endWeek),
-      tests: isThirdTrimesterCounseling
-        ? []
-        : (savedProgress?.tests ?? THIRD_TRIMESTER_LAB_TESTS).map((test) => ({ ...test })),
+      screeningRows: isThirdTrimesterScreening
+        ? (savedProgress?.screeningRows ?? FIRST_TRIMESTER_SCREENING_ROWS).map((row) => ({
+            ...row,
+          }))
+        : undefined,
+      screeningTitle: isThirdTrimesterScreening ? 'Prenatal Screening' : undefined,
+      tests:
+        isThirdTrimesterCounseling || isThirdTrimesterScreening
+          ? []
+          : (savedProgress?.tests ?? THIRD_TRIMESTER_LAB_TESTS).map((test) => ({ ...test })),
       title: chip.label,
     });
   }
@@ -2927,6 +3124,35 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }));
   }
 
+  updateTimelineTooltipScreeningScore(rowId: string, event: Event): void {
+    const rawValue = (event.target as HTMLInputElement).value;
+    const parsedValue = Number(rawValue);
+    const score =
+      rawValue === '' || Number.isNaN(parsedValue) ? undefined : this.clamp(parsedValue, 0, 30);
+
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      screeningRows: tooltip.screeningRows?.map((row) =>
+        row.id === rowId ? { ...row, score } : row,
+      ),
+    }));
+  }
+
+  toggleTimelineTooltipScreeningResponse(rowId: string, response: string): void {
+    if (response !== 'negative' && response !== 'positive') {
+      return;
+    }
+
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      screeningRows: tooltip.screeningRows?.map((row) =>
+        row.id === rowId
+          ? { ...row, response: row.response === response ? undefined : response }
+          : row,
+      ),
+    }));
+  }
+
   setTimelineTooltipTestState(
     test: TimelineStatusTooltipTest,
     actionState: TimelineStatusTooltipTest['actionState'],
@@ -2949,6 +3175,22 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       postResultTests: tooltip.postResultTests?.map((item) =>
         item === test ? { ...item, actionState } : item,
       ),
+    }));
+  }
+
+  orderTimelineTooltipPostResultTest(test: TimelineStatusTooltipTest, fromRemoved = false): void {
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      postResultRemovedTests: fromRemoved
+        ? tooltip.postResultRemovedTests?.map((item) =>
+            item === test ? { ...item, actionState: 'ordered' } : item,
+          )
+        : tooltip.postResultRemovedTests,
+      postResultTests: fromRemoved
+        ? tooltip.postResultTests
+        : tooltip.postResultTests?.map((item) =>
+            item === test ? { ...item, actionState: 'ordered' } : item,
+          ),
     }));
   }
 
@@ -3074,6 +3316,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   canSubmitTimelineTooltipResults(): boolean {
+    if (this.activeTimelineStatusTooltip()?.tooltip.checklistPlacement === 'tests') {
+      return true;
+    }
+
     return Boolean(
       this.activeTimelineStatusTooltip()?.tooltip.tests?.some(
         (test) => test.actionState === 'ordered' && test.orderResult?.trim(),
@@ -3091,6 +3337,11 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   submitTimelineTooltipResults(): void {
     if (!this.canSubmitTimelineTooltipResults()) {
+      return;
+    }
+
+    if (this.activeTimelineStatusTooltip()?.tooltip.checklistPlacement === 'tests') {
+      this.hideTimelineStatusTooltip();
       return;
     }
 

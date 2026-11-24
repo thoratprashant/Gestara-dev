@@ -2061,6 +2061,76 @@
                   }
                 }
               </div>
+            } @else if (dueSoonTooltip.screeningRows; as screeningRows) {
+              <p
+                class="timeline-status-tooltip__result-title timeline-status-tooltip__screening-title"
+              >
+                <strong>Test Name:</strong> {{ dueSoonTooltip.screeningTitle }}
+              </p>
+
+              <div
+                class="timeline-status-tooltip__tests timeline-status-tooltip__screening-table"
+                role="table"
+                aria-label="Lab tests"
+              >
+                <div class="timeline-status-tooltip__screening-head" role="row">
+                  <span role="columnheader">Screening</span>
+                  <span role="columnheader">Result</span>
+                </div>
+
+                <div class="timeline-status-tooltip__screening-body" role="rowgroup">
+                  @for (row of screeningRows; track row.id) {
+                    <div class="timeline-status-tooltip__screening-row" role="row">
+                      <strong role="cell">{{ row.label }}</strong>
+                      <div class="timeline-status-tooltip__screening-result" role="cell">
+                        @if (row.kind === 'score') {
+                          <input
+                            class="timeline-status-tooltip__screening-score"
+                            type="number"
+                            min="0"
+                            max="30"
+                            [value]="row.score ?? ''"
+                            [attr.aria-label]="row.label + ' score'"
+                            (input)="updateDueSoonScreeningScore(row.id, $event)"
+                          />
+                          <span>{{ row.interpretation }}</span>
+                        } @else {
+                          @for (response of ['negative', 'positive']; track response) {
+                            <label
+                              class="timeline-status-tooltip__screening-choice"
+                              [class.timeline-status-tooltip__screening-choice--selected]="
+                                row.response === response
+                              "
+                            >
+                              <input
+                                type="checkbox"
+                                [checked]="row.response === response"
+                                [attr.aria-label]="row.label + ' ' + response"
+                                (change)="toggleDueSoonScreeningResponse(row.id, response)"
+                              />
+                              <span aria-hidden="true"></span>
+                              {{ response === 'negative' ? 'Negative' : 'Positive' }}
+                            </label>
+                          }
+                        }
+                      </div>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <label
+                class="timeline-status-tooltip__notes timeline-status-tooltip__notes--editable"
+              >
+                <span>Notes:</span>
+                <textarea
+                  rows="3"
+                  [readOnly]="dueSoonTooltip.readOnly"
+                  [value]="dueSoonTooltip.notes"
+                  placeholder="Add clinical notes about the screening results..."
+                  (input)="updateDueSoonNotes($event)"
+                ></textarea>
+              </label>
             } @else {
               <h3>Lab Tests:</h3>
               <div class="timeline-status-tooltip__test-list">
@@ -2245,7 +2315,11 @@
 
           <div class="timeline-status-tooltip__divider"></div>
 
-          @if (activeStatusTooltip.tooltip.checklistItems; as checklistItems) {
+          @if (
+            activeStatusTooltip.tooltip.checklistPlacement !== 'tests' &&
+              activeStatusTooltip.tooltip.checklistItems;
+            as checklistItems
+          ) {
             <section class="due-soon-tooltip__checklist" aria-label="Checklist items">
               <header>
                 <h3>Checklist Items</h3>
@@ -2516,89 +2590,151 @@
             </section>
           }
 
-          @if (activeStatusTooltip.tooltip.tests?.length) {
+          @if (
+            activeStatusTooltip.tooltip.tests?.length ||
+            (activeStatusTooltip.tooltip.checklistPlacement === 'tests' &&
+              activeStatusTooltip.tooltip.checklistItems?.length)
+          ) {
             <!-- <div class="timeline-status-tooltip__divider"></div> -->
             <section class="timeline-status-tooltip__tests" aria-label="Lab tests">
               <h3>Lab Tests:</h3>
-              <div class="timeline-status-tooltip__test-list">
-                @for (test of activeStatusTooltip.tooltip.tests; track test.label) {
-                  <div
-                    class="timeline-status-tooltip__test"
-                    [class.timeline-status-tooltip__test--removed]="test.removed"
-                    [class.timeline-status-tooltip__test--declined]="
-                      test.actionState === 'declined'
-                    "
-                    [class.timeline-status-tooltip__test--ordered]="test.actionState === 'ordered'"
-                    [class.timeline-status-tooltip__test--result]="test.result"
-                  >
-                    <span
-                      class="timeline-status-tooltip__icon"
-                      [attr.data-icon]="test.result ? 'check' : 'test-tube'"
-                      aria-hidden="true"
-                    ></span>
-                    <div class="timeline-status-tooltip__test-content">
-                      <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
-                      @if (test.result) {
-                        <span class="timeline-status-tooltip__result">{{ test.result }}</span>
+              @if (
+                activeStatusTooltip.tooltip.checklistPlacement === 'tests' &&
+                  activeStatusTooltip.tooltip.checklistItems;
+                as checklistItems
+              ) {
+                <div class="due-soon-tooltip__items timeline-status-tooltip__lab-checklist">
+                  @for (item of checklistItems; track item.id) {
+                    <div
+                      class="due-soon-tooltip__item"
+                      [class.due-soon-tooltip__item--declined]="item.declined"
+                    >
+                      <label>
+                        <input
+                          type="checkbox"
+                          [checked]="item.checked"
+                          [disabled]="item.declined || activeStatusTooltip.readOnly"
+                          (change)="toggleTimelineTooltipChecklistItem(item.id)"
+                        />
+                        <span class="due-soon-tooltip__checkbox" aria-hidden="true"></span>
+                        <span>{{ item.label }}</span>
+                      </label>
+
+                      @if (item.declined) {
+                        <button
+                          class="timeline-status-tooltip__reactivate"
+                          type="button"
+                          (click)="reactivateTimelineTooltipChecklistItem(item.id)"
+                        >
+                          Reactivate
+                        </button>
+                      } @else if (!item.checked) {
+                        <button
+                          type="button"
+                          (click)="declineTimelineTooltipChecklistItem(item.id)"
+                        >
+                          Decline
+                        </button>
                       }
                     </div>
-                    @if (test.showActions) {
-                      <div class="timeline-status-tooltip__test-actions">
-                        @if (test.actionState === 'declined') {
-                          <button
-                            class="timeline-status-tooltip__reactivate"
-                            type="button"
-                            (click)="reactivateTimelineTooltipTest(test)"
-                          >
-                            Reactivate
-                          </button>
-                        } @else {
-                          @if (test.actionState !== 'ordered') {
-                            @if (activeStatusTooltip.tooltip.status !== 'ordered') {
+
+                    @if (item.checked && item.notes) {
+                      <label class="due-soon-tooltip__notes">
+                        <span>Notes</span>
+                        <textarea
+                          rows="2"
+                          [readOnly]="activeStatusTooltip.readOnly"
+                          [value]="item.noteValue || ''"
+                          placeholder="Add notes..."
+                          (input)="updateTimelineTooltipChecklistNotes(item.id, $event)"
+                        ></textarea>
+                      </label>
+                    }
+                  }
+                </div>
+              } @else {
+                <div class="timeline-status-tooltip__test-list">
+                  @for (test of activeStatusTooltip.tooltip.tests; track test.label) {
+                    <div
+                      class="timeline-status-tooltip__test"
+                      [class.timeline-status-tooltip__test--removed]="test.removed"
+                      [class.timeline-status-tooltip__test--declined]="
+                        test.actionState === 'declined'
+                      "
+                      [class.timeline-status-tooltip__test--ordered]="
+                        test.actionState === 'ordered'
+                      "
+                      [class.timeline-status-tooltip__test--result]="test.result"
+                    >
+                      <span
+                        class="timeline-status-tooltip__icon"
+                        [attr.data-icon]="test.result ? 'check' : 'test-tube'"
+                        aria-hidden="true"
+                      ></span>
+                      <div class="timeline-status-tooltip__test-content">
+                        <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
+                        @if (test.result) {
+                          <span class="timeline-status-tooltip__result">{{ test.result }}</span>
+                        }
+                      </div>
+                      @if (test.showActions) {
+                        <div class="timeline-status-tooltip__test-actions">
+                          @if (test.actionState === 'declined') {
+                            <button
+                              class="timeline-status-tooltip__reactivate"
+                              type="button"
+                              (click)="reactivateTimelineTooltipTest(test)"
+                            >
+                              Reactivate
+                            </button>
+                          } @else {
+                            @if (test.actionState !== 'ordered') {
+                              @if (activeStatusTooltip.tooltip.status !== 'ordered') {
+                                <button
+                                  class="timeline-status-tooltip__order"
+                                  type="button"
+                                  (click)="orderTimelineTooltipTest(test)"
+                                >
+                                  Order
+                                </button>
+                              }
                               <button
-                                class="timeline-status-tooltip__order"
+                                class="timeline-status-tooltip__decline"
                                 type="button"
-                                (click)="orderTimelineTooltipTest(test)"
+                                (click)="declineTimelineTooltipTest(test)"
                               >
-                                Order
+                                Decline
                               </button>
                             }
                             <button
-                              class="timeline-status-tooltip__decline"
+                              class="timeline-status-tooltip__remove"
                               type="button"
-                              (click)="declineTimelineTooltipTest(test)"
+                              aria-label="Remove test"
+                              (click)="removeTimelineTooltipTest(test)"
                             >
-                              Decline
+                              <span
+                                class="timeline-status-tooltip__icon"
+                                data-icon="close"
+                                aria-hidden="true"
+                              ></span>
                             </button>
                           }
-                          <button
-                            class="timeline-status-tooltip__remove"
-                            type="button"
-                            aria-label="Remove test"
-                            (click)="removeTimelineTooltipTest(test)"
-                          >
-                            <span
-                              class="timeline-status-tooltip__icon"
-                              data-icon="close"
-                              aria-hidden="true"
-                            ></span>
-                          </button>
-                        }
-                      </div>
-                    }
-                    @if (test.actionState === 'ordered') {
-                      <input
-                        class="timeline-status-tooltip__order-result-input"
-                        type="text"
-                        placeholder="Add order result"
-                        [attr.aria-label]="'Add order result for ' + test.label"
-                        [value]="test.orderResult || ''"
-                        (input)="setTimelineTooltipOrderResult(test, $event)"
-                      />
-                    }
-                  </div>
-                }
-              </div>
+                        </div>
+                      }
+                      @if (test.actionState === 'ordered') {
+                        <input
+                          class="timeline-status-tooltip__order-result-input"
+                          type="text"
+                          placeholder="Add order result"
+                          [attr.aria-label]="'Add order result for ' + test.label"
+                          [value]="test.orderResult || ''"
+                          (input)="setTimelineTooltipOrderResult(test, $event)"
+                        />
+                      }
+                    </div>
+                  }
+                </div>
+              }
 
               @if (activeStatusTooltip.tooltip.notePlaceholder) {
                 <input
@@ -2608,6 +2744,63 @@
                   aria-label="Test notes"
                 />
               }
+            </section>
+          }
+
+          @if (activeStatusTooltip.tooltip.screeningRows; as screeningRows) {
+            <p
+              class="timeline-status-tooltip__result-title timeline-status-tooltip__screening-title"
+            >
+              <strong>Test Name:</strong> {{ activeStatusTooltip.tooltip.screeningTitle }}
+            </p>
+            <section
+              class="timeline-status-tooltip__tests timeline-status-tooltip__screening-table"
+              aria-label="Lab tests"
+            >
+              <div class="timeline-status-tooltip__screening-head" role="row">
+                <span role="columnheader">Screening</span>
+                <span role="columnheader">Result</span>
+              </div>
+
+              <div class="timeline-status-tooltip__screening-body" role="rowgroup">
+                @for (row of screeningRows; track row.id) {
+                  <div class="timeline-status-tooltip__screening-row" role="row">
+                    <strong role="cell">{{ row.label }}</strong>
+                    <div class="timeline-status-tooltip__screening-result" role="cell">
+                      @if (row.kind === 'score') {
+                        <input
+                          class="timeline-status-tooltip__screening-score"
+                          type="number"
+                          min="0"
+                          max="30"
+                          [value]="row.score ?? ''"
+                          [attr.aria-label]="row.label + ' score'"
+                          (input)="updateTimelineTooltipScreeningScore(row.id, $event)"
+                        />
+                        <span>{{ row.interpretation }}</span>
+                      } @else {
+                        @for (response of ['negative', 'positive']; track response) {
+                          <label
+                            class="timeline-status-tooltip__screening-choice"
+                            [class.timeline-status-tooltip__screening-choice--selected]="
+                              row.response === response
+                            "
+                          >
+                            <input
+                              type="checkbox"
+                              [checked]="row.response === response"
+                              [attr.aria-label]="row.label + ' ' + response"
+                              (change)="toggleTimelineTooltipScreeningResponse(row.id, response)"
+                            />
+                            <span aria-hidden="true"></span>
+                            {{ response === 'negative' ? 'Negative' : 'Positive' }}
+                          </label>
+                        }
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
             </section>
           }
 
@@ -2825,13 +3018,24 @@
                             Reactivate
                           </button>
                         } @else {
-                          <button
-                            class="timeline-status-tooltip__decline"
-                            type="button"
-                            (click)="declineTimelineTooltipPostResultTest(test)"
-                          >
-                            Decline
-                          </button>
+                          @if (test.actionState !== 'ordered') {
+                            @if (activeStatusTooltip.tooltip.postResultAllowOrder) {
+                              <button
+                                class="timeline-status-tooltip__order"
+                                type="button"
+                                (click)="orderTimelineTooltipPostResultTest(test)"
+                              >
+                                Order
+                              </button>
+                            }
+                            <button
+                              class="timeline-status-tooltip__decline"
+                              type="button"
+                              (click)="declineTimelineTooltipPostResultTest(test)"
+                            >
+                              Decline
+                            </button>
+                          }
                           <button
                             class="timeline-status-tooltip__remove"
                             type="button"
@@ -2888,13 +3092,24 @@
                           Reactivate
                         </button>
                       } @else {
-                        <button
-                          class="timeline-status-tooltip__decline"
-                          type="button"
-                          (click)="declineTimelineTooltipPostResultTest(test, true)"
-                        >
-                          Decline
-                        </button>
+                        @if (test.actionState !== 'ordered') {
+                          @if (activeStatusTooltip.tooltip.postResultAllowOrder) {
+                            <button
+                              class="timeline-status-tooltip__order"
+                              type="button"
+                              (click)="orderTimelineTooltipPostResultTest(test, true)"
+                            >
+                              Order
+                            </button>
+                          }
+                          <button
+                            class="timeline-status-tooltip__decline"
+                            type="button"
+                            (click)="declineTimelineTooltipPostResultTest(test, true)"
+                          >
+                            Decline
+                          </button>
+                        }
                       }
                       <button
                         class="timeline-status-tooltip__remove"
@@ -2924,6 +3139,23 @@
                 [value]="activeStatusTooltip.tooltip.notes"
               ></textarea>
             </label>
+          }
+
+          @if (activeStatusTooltip.tooltip.postResultNotesPlaceholder) {
+            <label class="timeline-status-tooltip__notes timeline-status-tooltip__notes--editable">
+              <span>Notes:</span>
+              <textarea
+                rows="3"
+                [readOnly]="activeStatusTooltip.readOnly"
+                [placeholder]="activeStatusTooltip.tooltip.postResultNotesPlaceholder"
+              ></textarea>
+            </label>
+          }
+
+          @if (activeStatusTooltip.tooltip.showSubmitFooter && !activeStatusTooltip.readOnly) {
+            <footer class="due-soon-tooltip__footer">
+              <button type="button" (click)="hideTimelineStatusTooltip()">Submit</button>
+            </footer>
           }
         </div>
       </aside>

@@ -1307,6 +1307,134 @@ describe('PatientDashboard timeline', () => {
     ).toBeNull();
   });
 
+  it('shows the completed Home blood pressure monitor only in actionable Lab Tests', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'home-blood-pressure-monitor',
+        label: 'Home blood pressure monitor',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const labTests = tooltip.querySelector(
+      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
+    ) as HTMLElement;
+    let labTest = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
+
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
+    expect(labTest.textContent).toContain('Ambulatory blood pressure monitor');
+    expect(labTest.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
+    expect(labTest.querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
+    expect(labTest.querySelector('.timeline-status-tooltip__remove')).toBeTruthy();
+    expect(notes.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toBe('');
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).placeholder).toContain(
+      'blood pressure items',
+    );
+    expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+
+    (labTest.querySelector('.timeline-status-tooltip__remove') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const removedOrders = tooltip.querySelector(
+      '.timeline-status-tooltip__removed-orders',
+    ) as HTMLElement;
+    const updatedLabTests = tooltip.querySelector(
+      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
+    );
+    let removedTest = removedOrders.querySelector('.timeline-status-tooltip__test') as HTMLElement;
+    expect(updatedLabTests).toBeNull();
+    expect(removedTest.textContent).toContain('Ambulatory blood pressure monitor');
+    expect(removedTest.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
+    expect(removedTest.querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
+    expect(
+      removedTest.querySelector(
+        '[aria-label="Remove Ambulatory blood pressure monitor permanently"]',
+      ),
+    ).toBeTruthy();
+    expect(removedOrders.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+
+    (removedTest.querySelector('.timeline-status-tooltip__decline') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    labTest = tooltip.querySelector(
+      '.timeline-status-tooltip__tests[aria-label="Lab tests"] .timeline-status-tooltip__test',
+    ) as HTMLElement;
+    expect(labTest.classList).toContain('timeline-status-tooltip__test--declined');
+    expect(labTest.querySelector('.timeline-status-tooltip__reactivate')).toBeTruthy();
+
+    (labTest.querySelector('.timeline-status-tooltip__reactivate') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    labTest = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
+    expect(labTest.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
+
+    (footer.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
+  });
+
+  it('shows the completed pre-eclampsia screening results with title and notes', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'screening-pre-eclampsia-labs',
+        label: 'Screening pre-eclampsia labs',
+        status: 'completed',
+        startWeek: 26,
+        endWeek: 27,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const table = tooltip.querySelector('.timeline-status-tooltip__result-table') as HTMLElement;
+    const headers = Array.from(table.querySelectorAll<HTMLElement>('[role="columnheader"]')).map(
+      (header) => header.textContent?.trim(),
+    );
+    const rows = Array.from(table.querySelectorAll<HTMLElement>('.result-tooltip__table-row')).map(
+      (row) =>
+        Array.from(row.querySelectorAll<HTMLElement>('[role="cell"]')).map((cell) =>
+          cell.textContent?.replace(/\s+/g, ' ').trim(),
+        ),
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Test Name: Pre-eclampsia Screening Labs',
+    );
+    expect(title.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(headers).toEqual(['Test Name', 'Value', 'Ref. Range']);
+    expect(rows).toEqual([
+      ['CBC (Hgb)', '12.6 g/dL', '≥11.0 (3rd trimester)'],
+      ['CBC (Platelets)', '248 K/uL', '150 – 400'],
+      ['CMP (Creatinine)', '0.72 mg/dL', '0.50 – 1.10'],
+      ['CMP (AST)', '18 U/L', '10 – 40'],
+      ['CMP (ALT)', '14 U/L', '7 – 56'],
+      ['LDH', '169 U/L', '100 – 220'],
+      ['Uric Acid', '4.2 mg/dL', '2.6 – 6.0'],
+      ['Protein/Creatinine Ratio (Urine)', '0.11', '< 0.30'],
+    ]);
+    expect(table.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'Pre-eclampsia screening laboratory results reviewed',
+    );
+  });
+
   it('shows the completed First trimester counseling checklist without notes', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
@@ -1378,6 +1506,163 @@ describe('PatientDashboard timeline', () => {
     expect(firstItem.classList).not.toContain('due-soon-tooltip__item--declined');
     expect(firstItem.querySelector('button')?.textContent?.trim()).toBe('Decline');
     expect(checklist.querySelector('textarea')).toBeNull();
+  });
+
+  it('shows the completed influenza and COVID checklist in the shared checkbox layout', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'immunization-influenza-covid',
+        label: 'influenza/COVID (Sept-April/May)',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    let items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    const labels = Array.from(
+      checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item label > span:last-child'),
+    ).map((label) => label.textContent?.trim());
+    let checkboxes = Array.from(
+      checklist.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+    );
+
+    expect(labels).toEqual(['Influenza', 'COVID']);
+    expect(checkboxes.map((checkbox) => checkbox.checked)).toEqual([true, false]);
+    expect(checklist.textContent).toContain('1 of 2 completed');
+    expect(items[0].querySelector('button')).toBeNull();
+    expect(items[1].querySelector('button')?.textContent?.trim()).toBe('Decline');
+    expect(checklist.querySelector('textarea')).toBeNull();
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+    expect(notes).toBeTruthy();
+    expect(checklist.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      'Influenza immunization completed. COVID immunization remains pending and was reviewed with the patient.',
+    );
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
+    expect(footer).toBeTruthy();
+    expect(notes.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+
+    (items[1].querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    expect(items[1].classList).toContain('due-soon-tooltip__item--declined');
+    expect(items[1].querySelector('button')?.textContent?.trim()).toBe('Reactivate');
+
+    (items[1].querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    checkboxes = Array.from(checklist.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    expect(items[1].querySelector('button')?.textContent?.trim()).toBe('Decline');
+
+    checkboxes[1].click();
+    fixture.detectChanges();
+    items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    expect(items[1].querySelector('button')).toBeNull();
+    expect(checklist.textContent).toContain('2 of 2 completed');
+    expect(checklist.querySelector('textarea')).toBeNull();
+
+    (footer.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
+  });
+
+  it('shows Delivery planning Future checklists in Lab Tests without general fields', () => {
+    const variants = [
+      {
+        id: 'delivery-planning-confirm-cephalic',
+        label: 'Confirm cephalic',
+        itemLabel: 'cephalic',
+        startWeek: 36,
+        endWeek: 37,
+      },
+      {
+        id: 'delivery-planning-schedule-iol',
+        label: 'Schedule IOL',
+        itemLabel: 'scheduled',
+        startWeek: 36,
+        endWeek: 42,
+      },
+    ];
+
+    for (const variant of variants) {
+      const fixture = TestBed.createComponent(PatientDashboard);
+      const dashboard = fixture.componentInstance;
+      fixture.detectChanges();
+
+      dashboard.showTimelineStatusTooltip(
+        {
+          id: variant.id,
+          label: variant.label,
+          status: 'future',
+          startWeek: variant.startWeek,
+          endWeek: variant.endWeek,
+        },
+        { currentTarget: document.createElement('button') } as unknown as Event,
+      );
+      fixture.detectChanges();
+
+      const tooltip = fixture.nativeElement.querySelector(
+        '#timeline-status-tooltip',
+      ) as HTMLElement;
+      const labTests = tooltip.querySelector(
+        '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
+      ) as HTMLElement;
+      let item = labTests.querySelector('.due-soon-tooltip__item') as HTMLElement;
+      let checkbox = item.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      let action = item.querySelector('button') as HTMLButtonElement;
+      const footer = tooltip.querySelector('.timeline-status-tooltip__bulk-actions') as HTMLElement;
+
+      expect(labTests.querySelector('h3')?.textContent?.trim()).toBe('Lab Tests:');
+      expect(item.querySelector('label > span:last-child')?.textContent?.trim()).toBe(
+        variant.itemLabel,
+      );
+      expect(checkbox.checked).toBe(false);
+      expect(action.textContent?.trim()).toBe('Decline');
+      expect(labTests.querySelector('textarea')).toBeNull();
+      expect(tooltip.querySelector('.timeline-status-tooltip__field')).toBeNull();
+      expect(tooltip.querySelector('.timeline-status-tooltip__notes--editable')).toBeNull();
+      expect(tooltip.querySelector('.due-soon-tooltip__checklist')).toBeNull();
+      expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+      expect((footer.querySelector('button') as HTMLButtonElement).disabled).toBe(false);
+
+      action.click();
+      fixture.detectChanges();
+      item = labTests.querySelector('.due-soon-tooltip__item') as HTMLElement;
+      action = item.querySelector('button') as HTMLButtonElement;
+      expect(item.classList).toContain('due-soon-tooltip__item--declined');
+      expect(action.textContent?.trim()).toBe('Reactivate');
+
+      action.click();
+      fixture.detectChanges();
+      item = labTests.querySelector('.due-soon-tooltip__item') as HTMLElement;
+      checkbox = item.querySelector('input[type="checkbox"]') as HTMLInputElement;
+      expect(item.querySelector('button')?.textContent?.trim()).toBe('Decline');
+
+      checkbox.click();
+      fixture.detectChanges();
+      const itemNotes = labTests.querySelector('.due-soon-tooltip__notes') as HTMLElement;
+      expect(itemNotes).toBeTruthy();
+      expect((itemNotes.querySelector('textarea') as HTMLTextAreaElement).value).toBe('');
+      expect(item.querySelector('button')).toBeNull();
+
+      (footer.querySelector('button') as HTMLButtonElement).click();
+      fixture.detectChanges();
+      expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
+      fixture.destroy();
+    }
   });
 
   it('assigns the requested screening, counseling, and immunization tasks', () => {
@@ -1765,6 +2050,139 @@ describe('PatientDashboard timeline', () => {
     expect(items[1].querySelector('button')?.textContent?.trim()).toBe('Decline');
   });
 
+  it('shows the First trimester social and behavioral screening table with notes and footer', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'behavioral-screening-first-trimester',
+        label: 'First trimester screening',
+        status: 'incomplete',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const table = tooltip.querySelector(
+      '.timeline-status-tooltip__screening-table[aria-label="Lab tests"]',
+    ) as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__screening-title') as HTMLElement;
+    const rows = Array.from(
+      table.querySelectorAll<HTMLElement>('.timeline-status-tooltip__screening-row'),
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
+    const footer = tooltip.querySelector('.timeline-status-tooltip__bulk-actions') as HTMLElement;
+    const score = table.querySelector(
+      '.timeline-status-tooltip__screening-score',
+    ) as HTMLInputElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe('Test Name: Prenatal Screening');
+    expect(title.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(rows.map((row) => row.querySelector('strong')?.textContent?.trim())).toEqual([
+      'EPDS (Edinburgh Postnatal Depression Scale)',
+      'Intimate Partner Violence Screening',
+      'Food Insecurity Screening',
+      'Transportation Insecurity Screening',
+      'Housing Insecurity Screening',
+      'Substance Use Screening',
+    ]);
+    expect(score.value).toBe('3');
+    expect(rows[0].textContent).toContain('(0–30; ≥10 consider further evaluation)');
+
+    for (const row of rows.slice(1, 5)) {
+      expect((row.querySelector('[aria-label$="negative"]') as HTMLInputElement).checked).toBe(
+        true,
+      );
+      expect((row.querySelector('[aria-label$="positive"]') as HTMLInputElement).checked).toBe(
+        false,
+      );
+    }
+    expect(
+      Array.from(rows[5].querySelectorAll<HTMLInputElement>('input')).every(
+        (input) => !input.checked,
+      ),
+    ).toBe(true);
+
+    expect(notes.querySelector('textarea')?.getAttribute('placeholder')).toBe(
+      'Add clinical notes about the screening results...',
+    );
+    expect(notes.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(
+      Array.from(footer.querySelectorAll('button')).map((button) => button.textContent?.trim()),
+    ).toEqual(['Order All', 'Decline All']);
+    expect(tooltip.querySelector('.timeline-status-tooltip__test-list')).toBeNull();
+
+    (rows[5].querySelector('[aria-label$="positive"]') as HTMLInputElement).click();
+    fixture.detectChanges();
+    expect((rows[5].querySelector('[aria-label$="positive"]') as HTMLInputElement).checked).toBe(
+      true,
+    );
+  });
+
+  it('reuses the Prenatal Screening table for the Due Soon Third trimester screening', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'behavioral-screening-third-trimester',
+        label: 'Third trimester screening',
+        status: 'due-soon',
+        startWeek: 28,
+        endWeek: 32,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
+    const checklistSection = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    const title = checklistSection.querySelector(
+      '.timeline-status-tooltip__screening-title',
+    ) as HTMLElement;
+    const table = checklistSection.querySelector(
+      '.timeline-status-tooltip__screening-table[aria-label="Lab tests"]',
+    ) as HTMLElement;
+    const rows = Array.from(
+      table.querySelectorAll<HTMLElement>('.timeline-status-tooltip__screening-row'),
+    );
+    const notes = checklistSection.querySelector(
+      '.timeline-status-tooltip__notes--editable textarea',
+    ) as HTMLTextAreaElement;
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe('Test Name: Prenatal Screening');
+    expect(rows).toHaveLength(6);
+    expect(
+      (table.querySelector('.timeline-status-tooltip__screening-score') as HTMLInputElement).value,
+    ).toBe('3');
+    expect((rows[1].querySelector('[aria-label$="negative"]') as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect(
+      Array.from(rows[5].querySelectorAll<HTMLInputElement>('input')).every(
+        (input) => !input.checked,
+      ),
+    ).toBe(true);
+    expect(notes.placeholder).toBe('Add clinical notes about the screening results...');
+    expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+    expect(checklistSection.textContent).not.toContain('Lab Tests:');
+
+    (rows[5].querySelector('[aria-label$="positive"]') as HTMLInputElement).click();
+    fixture.detectChanges();
+    expect((rows[5].querySelector('[aria-label$="positive"]') as HTMLInputElement).checked).toBe(
+      true,
+    );
+  });
+
   it('uses each task start and end week in every status tooltip Scheduled row', () => {
     const dashboard = new PatientDashboard();
     const trigger = document.createElement('div');
@@ -1849,7 +2267,7 @@ describe('PatientDashboard timeline', () => {
     }
   });
 
-  it('uses the shared Lab Tests section for every status that displays tests', () => {
+  it('uses the shared tests section for lab and screening content', () => {
     for (const status of ['incomplete', 'future', 'declined']) {
       const fixture = TestBed.createComponent(PatientDashboard);
       fixture.detectChanges();
@@ -1868,9 +2286,16 @@ describe('PatientDashboard timeline', () => {
       ) as HTMLElement;
 
       expect(testsSection).toBeTruthy();
-      expect(testsSection.querySelector('h3')?.textContent?.trim()).toBe('Lab Tests:');
-      expect(testsSection.querySelector('.timeline-status-tooltip__test-list')).toBeTruthy();
-      expect(testsSection.querySelector('.timeline-status-tooltip__test')).toBeTruthy();
+      if (status === 'incomplete') {
+        expect(testsSection.querySelector('.timeline-status-tooltip__screening-head')).toBeTruthy();
+        expect(
+          testsSection.querySelectorAll('.timeline-status-tooltip__screening-row'),
+        ).toHaveLength(6);
+      } else {
+        expect(testsSection.querySelector('h3')?.textContent?.trim()).toBe('Lab Tests:');
+        expect(testsSection.querySelector('.timeline-status-tooltip__test-list')).toBeTruthy();
+        expect(testsSection.querySelector('.timeline-status-tooltip__test')).toBeTruthy();
+      }
     }
   });
 
