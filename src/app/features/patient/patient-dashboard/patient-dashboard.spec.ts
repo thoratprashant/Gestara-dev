@@ -1383,6 +1383,40 @@ describe('PatientDashboard timeline', () => {
     expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
   });
 
+  it('reuses the Home blood pressure monitor workflow for Gestational Hypertension', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'gestational-hypertension-home-blood-pressure-monitor',
+        label: 'Home blood pressure monitor',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const labTests = tooltip.querySelector(
+      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
+    ) as HTMLElement;
+    const test = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
+
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
+    expect(test.textContent).toContain('Ambulatory blood pressure monitor');
+    expect(test.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
+    expect(test.querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
+    expect(test.querySelector('.timeline-status-tooltip__remove')).toBeTruthy();
+    expect(notes).toBeTruthy();
+    expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+  });
+
   it('shows the completed pre-eclampsia screening results with title and notes', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
@@ -1432,6 +1466,301 @@ describe('PatientDashboard timeline', () => {
     expect(table.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
       'Pre-eclampsia screening laboratory results reviewed',
+    );
+  });
+
+  it('reuses the pre-eclampsia screening results for Gestational Hypertension', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'gestational-hypertension-screening-pre-eclampsia-labs',
+        label: 'Screening pre-eclampsia labs',
+        status: 'completed',
+        startWeek: 26,
+        endWeek: 27,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const rows = Array.from(
+      tooltip.querySelectorAll<HTMLElement>(
+        '.timeline-status-tooltip__result-table .result-tooltip__table-row',
+      ),
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Test Name: Pre-eclampsia Screening Labs',
+    );
+    expect(rows).toHaveLength(8);
+    expect(rows[0].textContent).toContain('CBC (Hgb)');
+    expect(rows[7].textContent).toContain('Protein/Creatinine Ratio (Urine)');
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'Pre-eclampsia screening laboratory results reviewed',
+    );
+  });
+
+  it('shows Advanced Maternal Age counseling in the shared completed checklist layout', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'advanced-maternal-age-counseling',
+        label: 'Counseling',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    let items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    let checkboxes = Array.from(
+      checklist.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'),
+    );
+    const labels = Array.from(
+      checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item label > span:last-child'),
+    ).map((label) => label.textContent?.trim());
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
+
+    expect(labels).toEqual(['Aneuploidy screening/diagnostic testing', 'Antepartum risks']);
+    expect(checkboxes.map((checkbox) => checkbox.checked)).toEqual([true, true]);
+    expect(checklist.textContent).toContain('2 of 2 completed');
+    expect(items.every((item) => item.querySelector('button') === null)).toBe(true);
+    expect(checklist.querySelector('textarea')).toBeNull();
+    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
+    expect(notes).toBeTruthy();
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toBe('');
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).placeholder).toContain(
+      'aneuploidy screening',
+    );
+    expect(tooltip.querySelector('.timeline-status-tooltip__field')).toBeNull();
+    expect(checklist.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notes.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+
+    checkboxes[0].click();
+    fixture.detectChanges();
+    items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    let action = items[0].querySelector('button') as HTMLButtonElement;
+    expect(action.textContent?.trim()).toBe('Decline');
+    expect(checklist.querySelector('textarea')).toBeNull();
+
+    action.click();
+    fixture.detectChanges();
+    items = Array.from(checklist.querySelectorAll<HTMLElement>('.due-soon-tooltip__item'));
+    action = items[0].querySelector('button') as HTMLButtonElement;
+    expect(items[0].classList).toContain('due-soon-tooltip__item--declined');
+    expect(action.textContent?.trim()).toBe('Reactivate');
+
+    action.click();
+    fixture.detectChanges();
+    checkboxes = Array.from(checklist.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    expect(checkboxes[0].checked).toBe(false);
+    expect(checklist.querySelector('textarea')).toBeNull();
+
+    (footer.querySelector('button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
+  });
+
+  it('shows the completed Level II ultrasound detailed anatomy results and notes', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'advanced-maternal-age-level-ii-ultrasound',
+        label: 'Level II ultrasound',
+        status: 'completed',
+        startWeek: 18,
+        endWeek: 22,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const notice = tooltip.querySelector('.timeline-status-tooltip__result-notice') as HTMLElement;
+    const table = tooltip.querySelector('.timeline-status-tooltip__result-table') as HTMLElement;
+    const sectionRow = table.querySelector(
+      '.timeline-status-tooltip__result-section-row',
+    ) as HTMLElement;
+    const resultRows = Array.from(
+      table.querySelectorAll<HTMLElement>(
+        '.result-tooltip__table-row:not(.timeline-status-tooltip__result-section-row)',
+      ),
+    ).map((row) =>
+      Array.from(row.querySelectorAll<HTMLElement>('[role="cell"]')).map((cell) =>
+        cell.textContent?.replace(/\s+/g, ' ').trim(),
+      ),
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Test Name: Obstetric Ultrasound - Level II (Detailed Anatomy)',
+    );
+    expect(notice.textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'Detailed fetal anatomic survey completed.',
+    );
+    expect(notice.textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'Normal fetal anatomy. No structural abnormalities identified.',
+    );
+    expect(title.compareDocumentPosition(notice)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notice.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(sectionRow.textContent?.trim()).toBe('Fetal Anatomy Survey');
+    expect(resultRows).toEqual([
+      ['Gestational age (ultrasound)', '20 weeks 0 days', '—'],
+      ['Estimated due date (EDD)', 'June 15, 2026', 'Based on prior 8w4d ultrasound'],
+      ['Fetal presentation', 'Cephalic', 'Normal'],
+      ['Placenta', 'Posterior, not low-lying', '> 2 cm from internal os'],
+      ['Amniotic fluid', 'Normal', 'AFI 14.2 cm'],
+      ['Cervical length', '3.8 cm', 'Normal (≥ 2.5 cm)'],
+      ['Biometry', 'AUA 20w1d', 'Consistent with EDD (±5 days)'],
+      ['Anatomic survey', 'Normal', 'No structural abnormalities identified'],
+      ['Cardiac anatomy', 'Normal', '4-chamber, outflow tracts, and great vessels visualized'],
+      ['CNS', 'Normal', 'Cranium, intracranial structures, and spine normal'],
+      ['Face / Neck', 'Normal', 'Orbits, nose/lips, and neck structures normal'],
+      ['Thorax / Lungs', 'Normal', 'No abnormalities identified'],
+      ['Abdomen / GI', 'Normal', 'Stomach, abdominal wall, and abdominal organs normal'],
+      ['Genitourinary', 'Normal', 'Kidneys, bladder, and genitalia normal'],
+      ['Extremities', 'Normal', 'Upper and lower extremities with normal structure and motion'],
+    ]);
+    expect(table.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'Level II obstetric ultrasound reviewed',
+    );
+  });
+
+  it('shows the not-reviewed Growth Ultrasound results, grouped biometry, and notes', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'advanced-maternal-age-growth-ultrasound-27',
+        label: 'Growth Ultrasound',
+        status: 'not-reviewed',
+        startWeek: 27,
+        endWeek: 29,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const notice = tooltip.querySelector('.timeline-status-tooltip__result-notice') as HTMLElement;
+    const table = tooltip.querySelector('.timeline-status-tooltip__result-table') as HTMLElement;
+    const sectionRow = table.querySelector(
+      '.timeline-status-tooltip__result-section-row',
+    ) as HTMLElement;
+    const subsectionRow = table.querySelector(
+      '.timeline-status-tooltip__result-subsection-row',
+    ) as HTMLElement;
+    const resultRows = Array.from(
+      table.querySelectorAll<HTMLElement>(
+        '.result-tooltip__table-row:not(.timeline-status-tooltip__result-section-row):not(.timeline-status-tooltip__result-subsection-row)',
+      ),
+    ).map((row) =>
+      Array.from(row.querySelectorAll<HTMLElement>('[role="cell"]')).map((cell) =>
+        cell.textContent?.replace(/\s+/g, ' ').trim(),
+      ),
+    );
+    const indentedRows = table.querySelectorAll('.timeline-status-tooltip__result-row--indented');
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Test Name: Obstetric Ultrasound - Growth',
+    );
+    expect(notice.textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'Growth ultrasound completed.',
+    );
+    expect(notice.textContent?.replace(/\s+/g, ' ').trim()).toContain(
+      'Estimated fetal weight at the 62nd percentile. Amniotic fluid and Dopplers normal.',
+    );
+    expect(title.compareDocumentPosition(notice)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notice.compareDocumentPosition(table)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(sectionRow.textContent?.trim()).toBe('Fetal Growth');
+    expect(subsectionRow.textContent?.trim()).toBe('Biometry');
+    expect(indentedRows).toHaveLength(4);
+    expect(resultRows).toEqual([
+      ['Gestational age (ultrasound)', '28 weeks 1 day', '—'],
+      ['Estimated due date (EDD)', 'June 15, 2026', 'Based on prior 8w4d ultrasound'],
+      ['Fetal presentation', 'Cephalic', '—'],
+      ['Placenta', 'Posterior, not low-lying', '—'],
+      ['Amniotic fluid (AFI)', '14.8 cm', 'Normal (5.0 – 24.0 cm)'],
+      ['Fetal heart rate', '142 bpm', 'Normal (110 – 160 bpm)'],
+      ['Estimated fetal weight (EFW)', '1,265 g (2 lb 13 oz)', '62nd percentile'],
+      ['Biparietal diameter (BPD)', '7.32 cm', '28w5d (58th percentile)'],
+      ['Head circumference (HC)', '26.34 cm', '28w5d (63rd percentile)'],
+      ['Abdominal circumference (AC)', '24.21 cm', '28w3d (67th percentile)'],
+      ['Femur length (FL)', '5.16 cm', '27w5d (49th percentile)'],
+      [
+        'Limited anatomy',
+        'No new abnormalities',
+        'Limited by gestational age; no structural anomalies identified',
+      ],
+    ]);
+    expect(table.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'detailed results are pending clinical review',
+    );
+  });
+
+  it('reuses the not-reviewed Growth Ultrasound results for Gestational Hypertension', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'gestational-hypertension-growth-ultrasound-27',
+        label: 'Growth Ultrasound',
+        status: 'not-reviewed',
+        startWeek: 27,
+        endWeek: 29,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const notice = tooltip.querySelector('.timeline-status-tooltip__result-notice') as HTMLElement;
+    const table = tooltip.querySelector('.timeline-status-tooltip__result-table') as HTMLElement;
+    const rows = table.querySelectorAll(
+      '.result-tooltip__table-row:not(.timeline-status-tooltip__result-section-row):not(.timeline-status-tooltip__result-subsection-row)',
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
+
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Test Name: Obstetric Ultrasound - Growth',
+    );
+    expect(notice.textContent).toContain('Growth ultrasound completed.');
+    expect(rows).toHaveLength(12);
+    expect(table.textContent).toContain('Fetal Growth');
+    expect(table.textContent).toContain('Biometry');
+    expect(table.textContent).toContain('62nd percentile');
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'detailed results are pending clinical review',
     );
   });
 
@@ -1977,6 +2306,66 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     expect(dueSoonTooltip.querySelector('.timeline-status-tooltip__test--ordered')).toBeTruthy();
+  });
+
+  it('shows the Gestational Hypertension NST/BPP due-soon tests and actions', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'gestational-hypertension-nst-bpp-28',
+        label: 'Twice weekly NST/BPP',
+        status: 'due-soon',
+        startWeek: 28,
+        endWeek: 29,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
+    const checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    let tests = Array.from(
+      checklist.querySelectorAll<HTMLElement>('.timeline-status-tooltip__test'),
+    );
+    const labels = tests.map((test) =>
+      test.querySelector('.timeline-status-tooltip__test-name')?.textContent?.trim(),
+    );
+    const notes = checklist.querySelector(
+      '.timeline-status-tooltip__notes--editable',
+    ) as HTMLElement;
+    const other = checklist.querySelector('.timeline-status-tooltip__field') as HTMLElement;
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
+
+    expect(labels).toEqual(['Biophysical Profile with NST', 'NST only']);
+    expect(checklist.textContent).not.toContain('1hr GTT');
+    expect(tests[0].querySelector('.timeline-status-tooltip__order')).toBeTruthy();
+    expect(tests[0].querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
+    expect(tests[0].querySelector('.timeline-status-tooltip__remove')).toBeTruthy();
+    expect(other).toBeTruthy();
+    expect(notes).toBeTruthy();
+    expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
+
+    (tests[0].querySelector('.timeline-status-tooltip__order') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    tests = Array.from(checklist.querySelectorAll<HTMLElement>('.timeline-status-tooltip__test'));
+    expect(tests[0].classList).toContain('timeline-status-tooltip__test--ordered');
+
+    (tests[1].querySelector('.timeline-status-tooltip__decline') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    tests = Array.from(checklist.querySelectorAll<HTMLElement>('.timeline-status-tooltip__test'));
+    expect(tests[1].classList).toContain('timeline-status-tooltip__test--declined');
+    expect(tests[1].querySelector('.timeline-status-tooltip__reactivate')).toBeTruthy();
+
+    (tests[1].querySelector('.timeline-status-tooltip__reactivate') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    tests = Array.from(checklist.querySelectorAll<HTMLElement>('.timeline-status-tooltip__test'));
+    expect(tests[1].classList).not.toContain('timeline-status-tooltip__test--declined');
+    expect(tests[1].querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
   });
 
   it('shows the Third Trimester counseling checklist with conditional item notes', () => {

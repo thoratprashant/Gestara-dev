@@ -146,8 +146,11 @@ interface PregnancyHistoryEntry {
 
 interface ResultTableRow {
   alert?: 'low';
+  indented?: boolean;
   name: string;
   range: string;
+  section?: boolean;
+  subsection?: boolean;
   value: string;
 }
 
@@ -605,6 +608,106 @@ const FIRST_TRIMESTER_ULTRASOUND_RESULT_ROWS: readonly ResultTableRow[] = [
   { name: 'Free fluid', value: 'Not seen', range: '—' },
 ];
 
+const LEVEL_II_ULTRASOUND_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'Gestational age (ultrasound)', value: '20 weeks 0 days', range: '\u2014' },
+  {
+    name: 'Estimated due date (EDD)',
+    value: 'June 15, 2026',
+    range: 'Based on prior 8w4d ultrasound',
+  },
+  { name: 'Fetal presentation', value: 'Cephalic', range: 'Normal' },
+  { name: 'Placenta', value: 'Posterior, not low-lying', range: '> 2 cm from internal os' },
+  { name: 'Amniotic fluid', value: 'Normal', range: 'AFI 14.2 cm' },
+  { name: 'Cervical length', value: '3.8 cm', range: 'Normal (\u2265 2.5 cm)' },
+  { name: 'Fetal Anatomy Survey', value: '', range: '', section: true },
+  { name: 'Biometry', value: 'AUA 20w1d', range: 'Consistent with EDD (\u00b15 days)' },
+  {
+    name: 'Anatomic survey',
+    value: 'Normal',
+    range: 'No structural abnormalities identified',
+  },
+  {
+    name: 'Cardiac anatomy',
+    value: 'Normal',
+    range: '4-chamber, outflow tracts, and great vessels visualized',
+  },
+  {
+    name: 'CNS',
+    value: 'Normal',
+    range: 'Cranium, intracranial structures, and spine normal',
+  },
+  {
+    name: 'Face / Neck',
+    value: 'Normal',
+    range: 'Orbits, nose/lips, and neck structures normal',
+  },
+  { name: 'Thorax / Lungs', value: 'Normal', range: 'No abnormalities identified' },
+  {
+    name: 'Abdomen / GI',
+    value: 'Normal',
+    range: 'Stomach, abdominal wall, and abdominal organs normal',
+  },
+  {
+    name: 'Genitourinary',
+    value: 'Normal',
+    range: 'Kidneys, bladder, and genitalia normal',
+  },
+  {
+    name: 'Extremities',
+    value: 'Normal',
+    range: 'Upper and lower extremities with normal structure and motion',
+  },
+];
+
+const GROWTH_ULTRASOUND_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'Gestational age (ultrasound)', value: '28 weeks 1 day', range: '\u2014' },
+  {
+    name: 'Estimated due date (EDD)',
+    value: 'June 15, 2026',
+    range: 'Based on prior 8w4d ultrasound',
+  },
+  { name: 'Fetal presentation', value: 'Cephalic', range: '\u2014' },
+  { name: 'Placenta', value: 'Posterior, not low-lying', range: '\u2014' },
+  { name: 'Amniotic fluid (AFI)', value: '14.8 cm', range: 'Normal (5.0 \u2013 24.0 cm)' },
+  { name: 'Fetal heart rate', value: '142 bpm', range: 'Normal (110 \u2013 160 bpm)' },
+  { name: 'Fetal Growth', value: '', range: '', section: true },
+  {
+    name: 'Estimated fetal weight (EFW)',
+    value: '1,265 g (2 lb 13 oz)',
+    range: '62nd percentile',
+  },
+  { name: 'Biometry', value: '', range: '', subsection: true },
+  {
+    indented: true,
+    name: 'Biparietal diameter (BPD)',
+    value: '7.32 cm',
+    range: '28w5d (58th percentile)',
+  },
+  {
+    indented: true,
+    name: 'Head circumference (HC)',
+    value: '26.34 cm',
+    range: '28w5d (63rd percentile)',
+  },
+  {
+    indented: true,
+    name: 'Abdominal circumference (AC)',
+    value: '24.21 cm',
+    range: '28w3d (67th percentile)',
+  },
+  {
+    indented: true,
+    name: 'Femur length (FL)',
+    value: '5.16 cm',
+    range: '27w5d (49th percentile)',
+  },
+  {
+    name: 'Limited anatomy',
+    value: 'No new abnormalities',
+    range: 'Limited by gestational age; no structural anomalies identified',
+  },
+];
+
 const CELL_FREE_DNA_RESULT_ROWS: readonly ResultTableRow[] = [
   {
     name: 'MaterniT21 testing',
@@ -728,6 +831,23 @@ const IMMUNIZATION_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
     declined: false,
     id: 'covid',
     label: 'COVID',
+    notes: false,
+  },
+];
+
+const ADVANCED_MATERNAL_AGE_COUNSELING_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: true,
+    declined: false,
+    id: 'aneuploidy-screening-diagnostic-testing',
+    label: 'Aneuploidy screening/diagnostic testing',
+    notes: false,
+  },
+  {
+    checked: true,
+    declined: false,
+    id: 'antepartum-risks',
+    label: 'Antepartum risks',
     notes: false,
   },
 ];
@@ -1147,6 +1267,11 @@ const THIRD_TRIMESTER_LAB_TESTS: ReadonlyArray<TimelineStatusTooltipTest> = [
   { label: 'CBC', showActions: true },
   { label: 'HIV antigen/antibody', showActions: true },
   { label: 'Syphilis antibody', showActions: true },
+];
+
+const NST_BPP_SURVEILLANCE_TESTS: ReadonlyArray<TimelineStatusTooltipTest> = [
+  { label: 'Biophysical Profile with NST', showActions: true },
+  { label: 'NST only', showActions: true },
 ];
 
 const DUE_SOON_DEFAULT_NOTES = '';
@@ -2621,6 +2746,21 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     }));
   }
 
+  restoreDueSoonRemovedTest(test: TimelineStatusTooltipTest): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      removedTests: active.removedTests.filter((item) => item !== test),
+      tests: [...active.tests, { ...test, actionState: 'active' }],
+    }));
+  }
+
+  permanentlyRemoveDueSoonTest(test: TimelineStatusTooltipTest): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      removedTests: active.removedTests.filter((item) => item !== test),
+    }));
+  }
+
   updateDueSoonNotes(event: Event): void {
     const notes = (event.target as HTMLTextAreaElement).value;
     this.updateDueSoonTooltip((active) => ({ ...active, notes }));
@@ -2782,7 +2922,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tooltip.otherPlaceholder = undefined;
       tooltip.tests = undefined;
     }
-    if (chip.id === 'home-blood-pressure-monitor') {
+    if (
+      chip.id === 'home-blood-pressure-monitor' ||
+      chip.id === 'gestational-hypertension-home-blood-pressure-monitor'
+    ) {
       tooltip.notes = undefined;
       tooltip.postResultAllowOrder = true;
       tooltip.postResultNotesPlaceholder =
@@ -2798,11 +2941,51 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tooltip.resultRows = undefined;
       tooltip.showSubmitFooter = true;
     }
-    if (chip.id === 'screening-pre-eclampsia-labs') {
+    if (
+      chip.id === 'screening-pre-eclampsia-labs' ||
+      chip.id === 'gestational-hypertension-screening-pre-eclampsia-labs'
+    ) {
       tooltip.notes =
         'Pre-eclampsia screening laboratory results reviewed. CBC, CMP, LDH, uric acid, and urine protein/creatinine ratio are within the listed reference ranges.';
       tooltip.resultRows = PRE_ECLAMPSIA_SCREENING_RESULT_ROWS;
       tooltip.resultTitle = 'Pre-eclampsia Screening Labs';
+    }
+    if (chip.id === 'advanced-maternal-age-counseling') {
+      tooltip.checklistItems = ADVANCED_MATERNAL_AGE_COUNSELING_CHECKLIST.map((item) => ({
+        ...item,
+      }));
+      tooltip.notes = undefined;
+      tooltip.notesPlaceholder =
+        'Add clinical notes about aneuploidy screening, diagnostic testing, or antepartum risks...';
+      tooltip.otherPlaceholder = undefined;
+      tooltip.resultRows = undefined;
+      tooltip.showSubmitFooter = true;
+    }
+    if (chip.id === 'advanced-maternal-age-level-ii-ultrasound') {
+      tooltip.notes =
+        'Level II obstetric ultrasound reviewed. Detailed fetal anatomy is normal with no structural abnormalities identified.';
+      tooltip.resultColumns = ['Finding', 'Result', 'Reference / Interpretation'];
+      tooltip.resultNotice = {
+        title: 'Detailed fetal anatomic survey completed.',
+        detail: 'Normal fetal anatomy. No structural abnormalities identified.',
+      };
+      tooltip.resultRows = LEVEL_II_ULTRASOUND_RESULT_ROWS;
+      tooltip.resultTitle = 'Obstetric Ultrasound - Level II (Detailed Anatomy)';
+    }
+    if (
+      chip.id === 'advanced-maternal-age-growth-ultrasound-27' ||
+      chip.id === 'gestational-hypertension-growth-ultrasound-27'
+    ) {
+      tooltip.notes =
+        'Growth ultrasound completed. Estimated fetal weight is at the 62nd percentile; detailed results are pending clinical review.';
+      tooltip.resultColumns = ['Finding', 'Result', 'Reference / Interpretation'];
+      tooltip.resultNotice = {
+        title: 'Growth ultrasound completed.',
+        detail:
+          'Estimated fetal weight at the 62nd percentile. Amniotic fluid and Dopplers normal.',
+      };
+      tooltip.resultRows = GROWTH_ULTRASOUND_RESULT_ROWS;
+      tooltip.resultTitle = 'Obstetric Ultrasound - Growth';
     }
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
@@ -2817,16 +3000,21 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       'due-soon': 380,
       declined: 657,
     };
+    const tooltipPreferredHeight =
+      chip.id === 'advanced-maternal-age-growth-ultrasound-27' ||
+      chip.id === 'gestational-hypertension-growth-ultrasound-27'
+        ? 657
+        : preferredHeight[chip.status];
     const spaceBelow = window.innerHeight - triggerBounds.bottom - 12;
     const spaceAbove = triggerBounds.top - 12;
     const placement =
-      spaceBelow >= Math.min(preferredHeight[chip.status], 300) || spaceBelow >= spaceAbove
+      spaceBelow >= Math.min(tooltipPreferredHeight, 300) || spaceBelow >= spaceAbove
         ? 'below'
         : 'above';
     const availableHeight = placement === 'below' ? spaceBelow : spaceAbove;
     const maxHeight = Math.max(
       0,
-      Math.min(preferredHeight[chip.status], availableHeight - 10, window.innerHeight - 24),
+      Math.min(tooltipPreferredHeight, availableHeight - 10, window.innerHeight - 24),
     );
     const left = this.clamp(
       triggerBounds.left + triggerBounds.width / 2 - width / 2,
@@ -2875,6 +3063,9 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const savedProgress = this.dueSoonTaskProgress.get(chip.id);
     const isThirdTrimesterCounseling = chip.id === 'counseling-third-trimester';
     const isThirdTrimesterScreening = chip.id === 'behavioral-screening-third-trimester';
+    const isGestationalHypertensionNstBpp = /^gestational-hypertension-nst-bpp-(28|29|30|31)$/.test(
+      chip.id,
+    );
 
     this.timelineStatusTooltipPosition.set({
       left,
@@ -2905,7 +3096,12 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tests:
         isThirdTrimesterCounseling || isThirdTrimesterScreening
           ? []
-          : (savedProgress?.tests ?? THIRD_TRIMESTER_LAB_TESTS).map((test) => ({ ...test })),
+          : (
+              savedProgress?.tests ??
+              (isGestationalHypertensionNstBpp
+                ? NST_BPP_SURVEILLANCE_TESTS
+                : THIRD_TRIMESTER_LAB_TESTS)
+            ).map((test) => ({ ...test })),
       title: chip.label,
     });
   }

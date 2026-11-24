@@ -2188,6 +2188,44 @@
                 }
               </div>
 
+              @if (dueSoonTooltip.removedTests.length) {
+                <section
+                  class="timeline-status-tooltip__tests timeline-status-tooltip__removed-orders"
+                  aria-label="Removed orders"
+                >
+                  <h3>Removed Orders:</h3>
+                  <div class="timeline-status-tooltip__test-list">
+                    @for (test of dueSoonTooltip.removedTests; track test.label) {
+                      <div class="timeline-status-tooltip__test">
+                        <span
+                          class="timeline-status-tooltip__icon"
+                          data-icon="test-tube"
+                          aria-hidden="true"
+                        ></span>
+                        <div class="timeline-status-tooltip__test-content">
+                          <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
+                        </div>
+                        <div class="timeline-status-tooltip__test-actions">
+                          <button
+                            class="timeline-status-tooltip__reactivate"
+                            type="button"
+                            (click)="restoreDueSoonRemovedTest(test)"
+                          >
+                            Restore
+                          </button>
+                          <button
+                            class="timeline-status-tooltip__remove"
+                            type="button"
+                            [attr.aria-label]="'Remove ' + test.label + ' permanently'"
+                            (click)="permanentlyRemoveDueSoonTest(test)"
+                          ></button>
+                        </div>
+                      </div>
+                    }
+                  </div>
+                </section>
+              }
+
               <div class="timeline-status-tooltip__field">
                 <label for="due-soon-tooltip-other-test">Other</label>
                 <input
@@ -2969,20 +3007,37 @@
               </div>
               <div class="result-tooltip__table-body" role="rowgroup">
                 @for (row of resultRows; track row.name) {
-                  <div
-                    class="result-tooltip__table-row"
-                    [class.result-tooltip__table-row--alert]="row.alert"
-                    role="row"
-                  >
-                    <span role="cell">{{ row.name }}</span>
-                    <span role="cell" [class.result-tooltip__table-value--alert]="row.alert">
-                      {{ row.value }}
-                      @if (row.alert) {
-                        <small aria-label="Low">L</small>
-                      }
-                    </span>
-                    <span role="cell">{{ row.range }}</span>
-                  </div>
+                  @if (row.section) {
+                    <div
+                      class="result-tooltip__table-row timeline-status-tooltip__result-section-row"
+                      role="row"
+                    >
+                      <span role="cell">{{ row.name }}</span>
+                    </div>
+                  } @else if (row.subsection) {
+                    <div
+                      class="result-tooltip__table-row timeline-status-tooltip__result-subsection-row"
+                      role="row"
+                    >
+                      <span role="cell">{{ row.name }}</span>
+                    </div>
+                  } @else {
+                    <div
+                      class="result-tooltip__table-row"
+                      [class.result-tooltip__table-row--alert]="row.alert"
+                      [class.timeline-status-tooltip__result-row--indented]="row.indented"
+                      role="row"
+                    >
+                      <span role="cell">{{ row.name }}</span>
+                      <span role="cell" [class.result-tooltip__table-value--alert]="row.alert">
+                        {{ row.value }}
+                        @if (row.alert) {
+                          <small aria-label="Low">L</small>
+                        }
+                      </span>
+                      <span role="cell">{{ row.range }}</span>
+                    </div>
+                  }
                 }
               </div>
             </div>
