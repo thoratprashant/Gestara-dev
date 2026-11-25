@@ -1925,21 +1925,6 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       living: 'No',
     },
     {
-      date: 'Apr 22, 2024',
-      dateLabel: 'Delivery',
-      status: 'Preterm',
-      timelineStatus: 'ordered',
-      gestationalAge: '34w 1d',
-      modeOfDelivery: 'Cesarean',
-      newborns: [
-        { label: 'Twin A', birthWeight: '5 lb 4 oz (2,381 g)', sex: 'Female' },
-        { label: 'Twin B', birthWeight: '4 lb 12 oz (2,155 g)', sex: 'Male' },
-      ],
-      deliveryLocation: 'Ascension St. Vincent',
-      complications: 'Preterm labor, PPROM',
-      living: 'Yes',
-    },
-    {
       date: 'Jun 15, 2026',
       dateLabel: 'EDD',
       status: 'Current',
