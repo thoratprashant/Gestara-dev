@@ -23,21 +23,20 @@ export interface AddProblemDialogResult {
 })
 export class AddProblemDialog {
   readonly favorites: ProblemOption[] = [
-    { name: 'Essential Hypertension', code: 'I10' },
-    { name: 'Type 2 Diabetes Mellitus', code: 'E11.9' },
-    { name: 'Major Depressive Disorder, Recurrent', code: 'F33.0' },
-    { name: 'Chronic Low Back Pain', code: 'M54.5' },
-    { name: 'Generalized Anxiety Disorder', code: 'F41.1' },
-    { name: 'Gastroesophageal Reflux Disease', code: 'K21.9' },
+    { name: 'Gestational hypertension', code: 'ICD-10 O13.3' },
+    { name: 'Gestational diabetes', code: 'ICD-10 O24.4' },
+    { name: 'Obesity in Pregnancy', code: 'ICD-10 O99.21' },
+    { name: 'Fetal growth restriction', code: 'ICD-10 O36.59' },
+    { name: 'Chronic Hypertension', code: 'ICD-10 O10.019' },
   ];
 
   readonly problemLibrary: ProblemOption[] = [
-    { name: 'Acute Bronchitis', code: 'J20.9' },
-    { name: 'Chronic Obstructive Pulmonary Disease', code: 'J44.1' },
-    { name: 'Asthma, Unspecified', code: 'J45.909' },
-    { name: 'Mild Intermittent Asthma', code: 'J45.20' },
-    { name: 'Mild Persistent Asthma', code: 'J45.30' },
-    { name: 'Community Acquired Pneumonia', code: 'J18.9' },
+    { name: 'Acute Bronchitis', code: 'ICD-10 J20.9' },
+    { name: 'Chronic Obstructive Pulmonary Disease', code: 'ICD-10 J44.1' },
+    { name: 'Asthma, Unspecified', code: 'ICD-10 J45.909' },
+    { name: 'Mild Intermittent Asthma', code: 'ICD-10 J45.20' },
+    { name: 'Mild Persistent Asthma', code: 'ICD-10 J45.30' },
+    { name: 'Community Acquired Pneumonia', code: 'ICD-10 J18.9' },
   ];
 
   readonly icd10Suggestions: SuggestiveOption[] = [

@@ -1117,6 +1117,10 @@
   font-size: 0.8125rem;
 }
 
+.timeline-status-tooltip__review-footer {
+  margin-top: 0.25rem;
+}
+
 .timeline-status-tooltip__outstanding-order {
   display: flex;
   flex-direction: column;
@@ -1283,6 +1287,11 @@
 
 .timeline-status-tooltip__result-row--indented > span:first-child {
   padding-left: 1rem;
+}
+
+.timeline-status-tooltip__result-table .timeline-status-tooltip__result-row--divider {
+  margin-top: 0.125rem;
+  border-top: 3px solid #d8b4fe;
 }
 
 .timeline-status-tooltip__bulk-actions button {

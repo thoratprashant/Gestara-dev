@@ -608,7 +608,7 @@
               </span>
               <i aria-hidden="true"></i>
             </div>
-            <h3>Fetal 1 - Heart Rate</h3>
+            <h3>Fetal - Heart Rate</h3>
             <p>
               @if (hasVitalValue(vitalCounts().heartRate)) {
                 <strong class="vital-card__value">{{ vitalCounts().heartRate }}</strong>
@@ -619,7 +619,7 @@
             </p>
           </article>
 
-          <article
+          <!-- <article
             class="vital-card"
             tabindex="0"
             (mouseenter)="showVitalTooltip('heart-rate-2', $event)"
@@ -642,7 +642,7 @@
                 <strong class="vital-card__value">-</strong>
               }
             </p>
-          </article>
+          </article> -->
 
           <article
             class="vital-card"
@@ -788,6 +788,13 @@
 
             @if (tooltip.subtitle) {
               <p class="vital-tooltip__subtitle">{{ tooltip.subtitle }}</p>
+            }
+
+            @if (tooltip.emptyState) {
+              <section class="vital-tooltip__empty-state" aria-label="Cervical exam status">
+                <strong>{{ tooltip.emptyState.title }}</strong>
+                <p>{{ tooltip.emptyState.message }}</p>
+              </section>
             }
 
             @if (tooltip.history) {
@@ -2132,7 +2139,7 @@
                 ></textarea>
               </label>
             } @else {
-              <h3>Lab Tests:</h3>
+              <h3>Orders:</h3>
               <div class="timeline-status-tooltip__test-list">
                 @for (test of dueSoonTooltip.tests; track test.label) {
                   <div
@@ -2635,7 +2642,7 @@
           ) {
             <!-- <div class="timeline-status-tooltip__divider"></div> -->
             <section class="timeline-status-tooltip__tests" aria-label="Lab tests">
-              <h3>Lab Tests:</h3>
+              <h3>Orders:</h3>
               @if (
                 activeStatusTooltip.tooltip.checklistPlacement === 'tests' &&
                   activeStatusTooltip.tooltip.checklistItems;
@@ -2970,7 +2977,8 @@
           @if (activeStatusTooltip.tooltip.resultRows; as resultRows) {
             @if (activeStatusTooltip.tooltip.resultTitle; as resultTitle) {
               <p class="timeline-status-tooltip__result-title">
-                <strong>Test Name:</strong> {{ resultTitle }}
+                <strong>{{ activeStatusTooltip.tooltip.resultTitleLabel || 'Test Name:' }}</strong>
+                {{ resultTitle }}
               </p>
             }
 
@@ -2992,7 +3000,9 @@
                 activeStatusTooltip.tooltip.resultColumns
               "
               role="table"
-              aria-label="Complete Blood Count results"
+              [attr.aria-label]="
+                (activeStatusTooltip.tooltip.resultTitle || 'Complete Blood Count') + ' results'
+              "
             >
               <div class="result-tooltip__table-head" role="row">
                 <span role="columnheader">
@@ -3025,6 +3035,7 @@
                     <div
                       class="result-tooltip__table-row"
                       [class.result-tooltip__table-row--alert]="row.alert"
+                      [class.timeline-status-tooltip__result-row--divider]="row.dividerBefore"
                       [class.timeline-status-tooltip__result-row--indented]="row.indented"
                       role="row"
                     >
@@ -3032,7 +3043,9 @@
                       <span role="cell" [class.result-tooltip__table-value--alert]="row.alert">
                         {{ row.value }}
                         @if (row.alert) {
-                          <small aria-label="Low">L</small>
+                          <small [attr.aria-label]="row.alert === 'high' ? 'High' : 'Low'">
+                            {{ row.alert === 'high' ? 'H' : 'L' }}
+                          </small>
                         }
                       </span>
                       <span role="cell">{{ row.range }}</span>
@@ -3045,7 +3058,7 @@
 
           @if (activeStatusTooltip.tooltip.postResultTests?.length) {
             <section class="timeline-status-tooltip__tests" aria-label="Lab tests">
-              <h3>Lab Tests:</h3>
+              <h3>Orders:</h3>
               <div class="timeline-status-tooltip__test-list">
                 @for (test of activeStatusTooltip.tooltip.postResultTests; track test.label) {
                   <div
@@ -3205,6 +3218,22 @@
                 [placeholder]="activeStatusTooltip.tooltip.postResultNotesPlaceholder"
               ></textarea>
             </label>
+          }
+
+          @if (
+            activeStatusTooltip.tooltip.status === 'not-reviewed' &&
+            !activeStatusTooltip.tooltip.resultsReviewed &&
+            !activeStatusTooltip.readOnly
+          ) {
+            <footer class="timeline-status-tooltip__review-footer">
+              <button
+                class="timeline-status-tooltip__mark-reviewed"
+                type="button"
+                (click)="markTimelineTooltipResultsReviewed()"
+              >
+                Mark as Reviewed
+              </button>
+            </footer>
           }
 
           @if (activeStatusTooltip.tooltip.showSubmitFooter && !activeStatusTooltip.readOnly) {

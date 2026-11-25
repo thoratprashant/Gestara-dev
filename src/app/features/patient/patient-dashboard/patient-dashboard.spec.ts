@@ -1061,6 +1061,56 @@ describe('PatientDashboard timeline', () => {
     });
   });
 
+  it('shows the complete First trimester labs result panel', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'labs-1',
+        label: 'First trimester labs',
+        status: 'completed',
+        startWeek: 0,
+        endWeek: 13,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    const table = tooltip.querySelector('.timeline-status-tooltip__result-table') as HTMLElement;
+    const rows = Array.from(table.querySelectorAll<HTMLElement>('.result-tooltip__table-row'));
+    const values = rows.map((row) =>
+      Array.from(row.querySelectorAll<HTMLElement>('[role="cell"]')).map((cell) =>
+        cell.textContent?.replace(/\s+/g, ' ').trim(),
+      ),
+    );
+    const dividerRow = table.querySelector(
+      '.timeline-status-tooltip__result-row--divider',
+    ) as HTMLElement;
+
+    expect(values).toEqual([
+      ['CBC (Hgb)', '12.6 g/dL', '≥11.0 (1st trimester)'],
+      ['CBC (Hct)', '37.8 %', '≥33 (1st trimester)'],
+      ['CBC (WBC)', '11.8 K/uL', '6.0 – 16.0'],
+      ['CBC (Platelets)', '248 K/uL', '150 – 400'],
+      ['Rubella IgG', '28.4 IU/mL', '≥10.0 (Immune)'],
+      ['Blood Type', 'O Positive', '—'],
+      ['Antibody Screen', 'Negative', 'Negative'],
+      ['Hepatitis B Surface Antigen (HBsAg)', 'Nonreactive', 'Nonreactive'],
+      ['Hepatitis B Core Antibody (anti-HBc)', 'Nonreactive', 'Nonreactive'],
+      ['Hepatitis B Surface Antibody (anti-HBs)', '>1,000 mIU/mL', '≥10 (Immune)'],
+      ['Syphilis Antibody (T. pallidum Ab)', 'Nonreactive', 'Nonreactive'],
+      ['Hepatitis C Antibody (anti-HCV)', 'Nonreactive', 'Nonreactive'],
+      ['HIV Ag/Ab (4th generation)', 'Nonreactive', 'Nonreactive'],
+      ['Prenatal Urine Culture', 'No growth', 'No growth'],
+      ['Gonorrhea PCR', 'Not detected', 'Not detected'],
+      ['Chlamydia PCR', 'Not detected', 'Not detected'],
+    ]);
+    expect(dividerRow.querySelector('[role="cell"]')?.textContent?.trim()).toBe('Rubella IgG');
+  });
+
   it('assigns the requested Routine Ultrasounds task and uses its name as the tooltip title', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
@@ -1307,7 +1357,7 @@ describe('PatientDashboard timeline', () => {
     ).toBeNull();
   });
 
-  it('shows the completed Home blood pressure monitor only in actionable Lab Tests', () => {
+  it('shows the completed ambulatory blood pressure results with reviewed notes', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
     fixture.detectChanges();
@@ -1325,65 +1375,46 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
-    const labTests = tooltip.querySelector(
-      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
-    ) as HTMLElement;
-    let labTest = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
-    const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const table = tooltip.querySelector('.timeline-status-tooltip__result-table') as HTMLElement;
+    const rows = Array.from(table.querySelectorAll<HTMLElement>('.result-tooltip__table-row')).map(
+      (row) =>
+        Array.from(row.querySelectorAll<HTMLElement>('[role="cell"]')).map((cell) =>
+          cell.textContent?.replace(/\s+/g, ' ').trim(),
+        ),
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
     const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
 
-    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
-    expect(labTest.textContent).toContain('Ambulatory blood pressure monitor');
-    expect(labTest.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
-    expect(labTest.querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
-    expect(labTest.querySelector('.timeline-status-tooltip__remove')).toBeTruthy();
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Order Name: Ambulatory blood pressure monitor',
+    );
+    expect(
+      Array.from(table.querySelectorAll<HTMLElement>('[role="columnheader"]')).map((header) =>
+        header.textContent?.trim(),
+      ),
+    ).toEqual(['Test name', 'Value', 'Ref. range']);
+    expect(rows).toEqual([
+      ['24-hour average BP', '128/78 mmHg', '< 130/80'],
+      ['Daytime average BP', '136/86 mmHg H', '< 135/85'],
+      ['Nighttime average BP', '116/68 mmHg', '< 120/70'],
+      ['Nocturnal dip', '14 %', '10 – 20'],
+      ['Valid readings', '48 of 52', '≥ 70 % valid'],
+    ]);
+    expect(table.querySelector('[aria-label="High"]')?.textContent?.trim()).toBe('H');
+    expect(tooltip.querySelector('.timeline-status-tooltip__tests')).toBeNull();
     expect(notes.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toBe('');
-    expect((notes.querySelector('textarea') as HTMLTextAreaElement).placeholder).toContain(
-      'blood pressure items',
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
+      '24-hour ambulatory BP monitoring reviewed. Daytime average mildly elevated. Nighttime BP normal with a normal nocturnal dip. Continue home BP monitoring and recheck at next visit.',
     );
     expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
-
-    (labTest.querySelector('.timeline-status-tooltip__remove') as HTMLButtonElement).click();
-    fixture.detectChanges();
-
-    const removedOrders = tooltip.querySelector(
-      '.timeline-status-tooltip__removed-orders',
-    ) as HTMLElement;
-    const updatedLabTests = tooltip.querySelector(
-      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
-    );
-    let removedTest = removedOrders.querySelector('.timeline-status-tooltip__test') as HTMLElement;
-    expect(updatedLabTests).toBeNull();
-    expect(removedTest.textContent).toContain('Ambulatory blood pressure monitor');
-    expect(removedTest.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
-    expect(removedTest.querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
-    expect(
-      removedTest.querySelector(
-        '[aria-label="Remove Ambulatory blood pressure monitor permanently"]',
-      ),
-    ).toBeTruthy();
-    expect(removedOrders.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
-
-    (removedTest.querySelector('.timeline-status-tooltip__decline') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    labTest = tooltip.querySelector(
-      '.timeline-status-tooltip__tests[aria-label="Lab tests"] .timeline-status-tooltip__test',
-    ) as HTMLElement;
-    expect(labTest.classList).toContain('timeline-status-tooltip__test--declined');
-    expect(labTest.querySelector('.timeline-status-tooltip__reactivate')).toBeTruthy();
-
-    (labTest.querySelector('.timeline-status-tooltip__reactivate') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    labTest = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
-    expect(labTest.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
 
     (footer.querySelector('button') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
   });
 
-  it('reuses the Home blood pressure monitor workflow for Gestational Hypertension', () => {
+  it('reuses the ambulatory blood pressure results for Gestational Hypertension', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     const dashboard = fixture.componentInstance;
     fixture.detectChanges();
@@ -1401,19 +1432,21 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     const tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
-    const labTests = tooltip.querySelector(
-      '.timeline-status-tooltip__tests[aria-label="Lab tests"]',
-    ) as HTMLElement;
-    const test = labTests.querySelector('.timeline-status-tooltip__test') as HTMLElement;
-    const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
+    const title = tooltip.querySelector('.timeline-status-tooltip__result-title') as HTMLElement;
+    const rows = tooltip.querySelectorAll(
+      '.timeline-status-tooltip__result-table .result-tooltip__table-row',
+    );
+    const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
     const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
 
-    expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
-    expect(test.textContent).toContain('Ambulatory blood pressure monitor');
-    expect(test.querySelector('.timeline-status-tooltip__order')).toBeTruthy();
-    expect(test.querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
-    expect(test.querySelector('.timeline-status-tooltip__remove')).toBeTruthy();
-    expect(notes).toBeTruthy();
+    expect(title.textContent?.replace(/\s+/g, ' ').trim()).toBe(
+      'Order Name: Ambulatory blood pressure monitor',
+    );
+    expect(rows).toHaveLength(5);
+    expect(tooltip.querySelector('.timeline-status-tooltip__tests')).toBeNull();
+    expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
+      'Daytime average mildly elevated',
+    );
     expect(footer.querySelector('button')?.textContent?.trim()).toBe('Submit');
   });
 
@@ -1723,6 +1756,19 @@ describe('PatientDashboard timeline', () => {
     expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toContain(
       'detailed results are pending clinical review',
     );
+    const reviewFooter = tooltip.querySelector(
+      '.timeline-status-tooltip__review-footer',
+    ) as HTMLElement;
+    const reviewButton = reviewFooter.querySelector(
+      '.timeline-status-tooltip__mark-reviewed',
+    ) as HTMLButtonElement;
+    expect(notes.compareDocumentPosition(reviewFooter)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(reviewButton.textContent?.trim()).toBe('Mark as Reviewed');
+
+    reviewButton.click();
+    fixture.detectChanges();
+    expect(tooltip.querySelector('.timeline-status-tooltip__mark-reviewed')).toBeNull();
+    expect(dashboard.activeTimelineStatusTooltip()?.tooltip.resultsReviewed).toBe(true);
   });
 
   it('reuses the not-reviewed Growth Ultrasound results for Gestational Hypertension', () => {
@@ -2465,7 +2511,7 @@ describe('PatientDashboard timeline', () => {
       table.querySelectorAll<HTMLElement>('.timeline-status-tooltip__screening-row'),
     );
     const notes = tooltip.querySelector('.timeline-status-tooltip__notes--editable') as HTMLElement;
-    const footer = tooltip.querySelector('.timeline-status-tooltip__bulk-actions') as HTMLElement;
+    const footer = tooltip.querySelector('.due-soon-tooltip__footer') as HTMLElement;
     const score = table.querySelector(
       '.timeline-status-tooltip__screening-score',
     ) as HTMLInputElement;
@@ -2503,7 +2549,8 @@ describe('PatientDashboard timeline', () => {
     expect(notes.compareDocumentPosition(footer)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect(
       Array.from(footer.querySelectorAll('button')).map((button) => button.textContent?.trim()),
-    ).toEqual(['Order All', 'Decline All']);
+    ).toEqual(['Submit']);
+    expect(tooltip.querySelector('.timeline-status-tooltip__bulk-actions')).toBeNull();
     expect(tooltip.querySelector('.timeline-status-tooltip__test-list')).toBeNull();
 
     (rows[5].querySelector('[aria-label$="positive"]') as HTMLInputElement).click();
@@ -2753,7 +2800,7 @@ describe('PatientDashboard timeline', () => {
     expect(badge.textContent?.trim()).toBe(chip.textContent?.trim());
   });
 
-  it('shows the CBC result table above Notes for Completed/Reviewed', () => {
+  it('shows the completed First trimester labs table above Notes', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     fixture.detectChanges();
     const chip = fixture.nativeElement.querySelector(
@@ -2771,10 +2818,9 @@ describe('PatientDashboard timeline', () => {
     const rows = table.querySelectorAll('.result-tooltip__table-row');
 
     expect(table).toBeTruthy();
-    expect(rows).toHaveLength(14);
-    expect(table.querySelector('.result-tooltip__table-value--alert')?.textContent?.trim()).toBe(
-      '11.2 g/dL L',
-    );
+    expect(rows).toHaveLength(16);
+    expect(table.querySelector('.result-tooltip__table-value--alert')).toBeNull();
+    expect(table.querySelector('.timeline-status-tooltip__result-row--divider')).toBeTruthy();
     expect(table.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
@@ -3358,6 +3404,48 @@ describe('PatientDashboard timeline', () => {
     vi.advanceTimersByTime(180);
     expect(dashboard.activeVitalTooltip()).toBeNull();
     vi.useRealTimers();
+  });
+
+  it('shows the cervical exam empty state instead of sample history', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    const section = document.createElement('section');
+    const card = document.createElement('article');
+    vi.spyOn(section, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      top: 100,
+      width: 1000,
+    } as DOMRect);
+    vi.spyOn(card, 'getBoundingClientRect').mockReturnValue({
+      left: 120,
+      right: 300,
+      top: 180,
+      bottom: 260,
+      width: 180,
+      height: 80,
+    } as DOMRect);
+    (
+      dashboard as unknown as {
+        vitalSigns: ElementRef<HTMLElement>;
+      }
+    ).vitalSigns = new ElementRef(section);
+
+    dashboard.showVitalTooltip('cervical-exam', {
+      currentTarget: card,
+    } as unknown as Event);
+    fixture.detectChanges();
+
+    const emptyState = fixture.nativeElement.querySelector(
+      '.vital-tooltip__empty-state',
+    ) as HTMLElement;
+    expect(dashboard.activeVitalTooltip()?.history).toBeUndefined();
+    expect(emptyState.querySelector('strong')?.textContent?.trim()).toBe(
+      'No cervical exams recorded',
+    );
+    expect(emptyState.querySelector('p')?.textContent?.trim()).toBe(
+      'Cervical exams are usually done closer to term (around 36 weeks) unless clinically needed.',
+    );
+    expect(fixture.nativeElement.querySelector('.vital-tooltip__history')).toBeNull();
   });
 
   it('opens a vital tooltip above its card and keeps its pointer inside the viewport', () => {

@@ -76,6 +76,10 @@ interface VitalHistoryItem {
 
 interface VitalTooltip {
   charts?: VitalChart[];
+  emptyState?: {
+    message: string;
+    title: string;
+  };
   footer?: {
     color: string;
     message: string;
@@ -145,7 +149,8 @@ interface PregnancyHistoryEntry {
 }
 
 interface ResultTableRow {
-  alert?: 'low';
+  alert?: 'high' | 'low';
+  dividerBefore?: boolean;
   indented?: boolean;
   name: string;
   range: string;
@@ -269,6 +274,7 @@ interface TimelineStatusTooltip {
   };
   resultRows?: readonly ResultTableRow[];
   resultTitle?: string;
+  resultTitleLabel?: string;
   resultReviewStates?: Record<string, TimelineResultReviewState>;
   resultsReviewed?: boolean;
   resultsSubmitted?: boolean;
@@ -486,13 +492,13 @@ const VITAL_TOOLTIPS: VitalTooltip[] = [
     // },
     charts: [
       {
-        min: 10,
+        min: 15,
         max: 35,
-        yTicks: [10, 17, 24, 35],
-        xLabels: ['16w', '20w', '24w', '26w', '28w'],
-        normalRange: { min: 16, max: 26, color: 'rgba(16, 185, 129, 0.1)' },
+        yTicks: [15, 20, 25, 30, 35],
+        xLabels: ['20w', '24w', '26w', '28w'],
+        normalRange: { min: 18, max: 30, color: 'rgba(16, 185, 129, 0.1)' },
         unit: 'cm',
-        series: [{ values: [17, 20, 24, 26, 29], color: '#f59e0b' }],
+        series: [{ values: [20, 24, 26, 29], color: '#f59e0b' }],
       },
     ],
   },
@@ -500,13 +506,18 @@ const VITAL_TOOLTIPS: VitalTooltip[] = [
     id: 'cervical-exam',
     title: 'Cervical Exam History',
     width: 520,
-    history: [
-      { week: '36w', detail: 'Closed, thick, -3 station' },
-      { week: '37w', detail: 'Closed, thick, -3 station' },
-      { week: '38w', detail: '1cm, 50% effaced, -2 station' },
-      { week: '39w', detail: '2cm, 70% effaced, -1 station' },
-      { week: '40w', detail: '3cm, 80% effaced, 0 station' },
-    ],
+    // history: [
+    //   { week: '36w', detail: 'Closed, thick, -3 station' },
+    //   { week: '37w', detail: 'Closed, thick, -3 station' },
+    //   { week: '38w', detail: '1cm, 50% effaced, -2 station' },
+    //   { week: '39w', detail: '2cm, 70% effaced, -1 station' },
+    //   { week: '40w', detail: '3cm, 80% effaced, 0 station' },
+    // ],
+    emptyState: {
+      title: 'No cervical exams recorded',
+      message:
+        'Cervical exams are usually done closer to term (around 36 weeks) unless clinically needed.',
+    },
   },
   {
     id: 'bmi',
@@ -521,7 +532,7 @@ const VITAL_TOOLTIPS: VitalTooltip[] = [
         xLabels: ['8w', '12w', '16w', '20w', '24w', '26w', '28w'],
         showVerticalGrid: true,
         unit: 'kg/m²',
-        series: [{ values: [24.4, 24.8, 25, 25.7, 26.1, 27, 27.6], color: '#6366f1' }],
+        series: [{ values: [22.4, 22.7, 23.2, 24, 24.7, 25.4, 25.8], color: '#6366f1' }],
       },
     ],
   },
@@ -545,7 +556,7 @@ const VITAL_TOOLTIPS: VitalTooltip[] = [
   {
     id: 'weight-gain',
     title: 'Weight Gain Trend',
-    subtitle: 'Recommended gain for Normal weight: 25-35 lbs (Pre-pregnancy BMI: 23.2)',
+    subtitle: 'Recommended gain for Normal weight: 25-35 lbs (Pre-pregnancy BMI: 22.4)',
     width: 528,
     charts: [
       {
@@ -586,6 +597,50 @@ const CBC_RESULT_ROWS: readonly ResultTableRow[] = [
   { name: 'Monocytes', value: '5.0 %', range: '(2.0 - 8.0)' },
   { name: 'Eosinophils', value: '2.0 %', range: '(1.0 - 4.0)' },
   { name: 'Basophils', value: '0.5 %', range: '(0.0 - 1.0)' },
+];
+
+const FIRST_TRIMESTER_LABS_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: 'CBC (Hgb)', value: '12.6 g/dL', range: '\u226511.0 (1st trimester)' },
+  { name: 'CBC (Hct)', value: '37.8 %', range: '\u226533 (1st trimester)' },
+  { name: 'CBC (WBC)', value: '11.8 K/uL', range: '6.0 \u2013 16.0' },
+  { name: 'CBC (Platelets)', value: '248 K/uL', range: '150 \u2013 400' },
+  {
+    dividerBefore: true,
+    name: 'Rubella IgG',
+    value: '28.4 IU/mL',
+    range: '\u226510.0 (Immune)',
+  },
+  { name: 'Blood Type', value: 'O Positive', range: '\u2014' },
+  { name: 'Antibody Screen', value: 'Negative', range: 'Negative' },
+  {
+    name: 'Hepatitis B Surface Antigen (HBsAg)',
+    value: 'Nonreactive',
+    range: 'Nonreactive',
+  },
+  {
+    name: 'Hepatitis B Core Antibody (anti-HBc)',
+    value: 'Nonreactive',
+    range: 'Nonreactive',
+  },
+  {
+    name: 'Hepatitis B Surface Antibody (anti-HBs)',
+    value: '>1,000 mIU/mL',
+    range: '\u226510 (Immune)',
+  },
+  {
+    name: 'Syphilis Antibody (T. pallidum Ab)',
+    value: 'Nonreactive',
+    range: 'Nonreactive',
+  },
+  {
+    name: 'Hepatitis C Antibody (anti-HCV)',
+    value: 'Nonreactive',
+    range: 'Nonreactive',
+  },
+  { name: 'HIV Ag/Ab (4th generation)', value: 'Nonreactive', range: 'Nonreactive' },
+  { name: 'Prenatal Urine Culture', value: 'No growth', range: 'No growth' },
+  { name: 'Gonorrhea PCR', value: 'Not detected', range: 'Not detected' },
+  { name: 'Chlamydia PCR', value: 'Not detected', range: 'Not detected' },
 ];
 
 const FIRST_TRIMESTER_ULTRASOUND_RESULT_ROWS: readonly ResultTableRow[] = [
@@ -731,6 +786,19 @@ const PRE_ECLAMPSIA_SCREENING_RESULT_ROWS: readonly ResultTableRow[] = [
   { name: 'LDH', value: '169 U/L', range: '100 \u2013 220' },
   { name: 'Uric Acid', value: '4.2 mg/dL', range: '2.6 \u2013 6.0' },
   { name: 'Protein/Creatinine Ratio (Urine)', value: '0.11', range: '< 0.30' },
+];
+
+const AMBULATORY_BLOOD_PRESSURE_RESULT_ROWS: readonly ResultTableRow[] = [
+  { name: '24-hour average BP', value: '128/78 mmHg', range: '< 130/80' },
+  {
+    alert: 'high',
+    name: 'Daytime average BP',
+    value: '136/86 mmHg',
+    range: '< 135/85',
+  },
+  { name: 'Nighttime average BP', value: '116/68 mmHg', range: '< 120/70' },
+  { name: 'Nocturnal dip', value: '14 %', range: '10 – 20' },
+  { name: 'Valid readings', value: '48 of 52', range: '≥ 70 % valid' },
 ];
 
 const FIRST_TRIMESTER_COUNSELING_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
@@ -998,7 +1066,7 @@ const RESULT_TOOLTIPS: ResultTooltip[] = [
 ];
 
 const VITAL_COUNT_TARGETS: VitalCountValues = {
-  bmi: 26.3,
+  bmi: 25.8,
   currentWeight: 165,
   diastolic: 92,
   fundalHeight: 29,
@@ -1249,8 +1317,9 @@ const TIMELINE_STATUS_TOOLTIPS: Record<TimelineStatus, TimelineStatusTooltip> = 
   },
   incomplete: {
     badgeLabel: 'Incomplete',
+    notesPlaceholder: 'Add clinical notes about the screening results...',
     schedule: [{ icon: 'calendar', label: 'Scheduled:', value: 'Week 28-32' }],
-    showBulkActions: true,
+    showSubmitFooter: true,
     status: 'incomplete',
     subtitle: 'Routine Prenatal Care',
     tests: [
@@ -1973,38 +2042,32 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     },
   ]);
   readonly declinedProblems = signal<readonly SuggestedProblem[]>([
-    {
-      id: 'declined-hemoglobin-electrophoresis',
-      name: 'Hemoglobin Electrophoresis',
-      icdCode: 'ICD-10 O13.3',
-      detectionReason: 'Result: 11.2 g/dL (11.5 - 15.5)',
-      detailLabel: 'Result:',
-      detailValue: '11.2 g/dL',
-      detailReference: '(11.5 - 15.5)',
-    },
-    {
-      id: 'declined-advanced-maternal-age',
-      name: 'Advanced Maternal Age',
-      icdCode: 'ICD-10 O13.3',
-      detectionReason: 'Age: 36 (≥ 35)',
-      detailLabel: 'Age:',
-      detailValue: '36',
-      detailReference: '(≥ 35 )',
-    },
+    // {
+    //   id: 'declined-hemoglobin-electrophoresis',
+    //   name: 'Hemoglobin Electrophoresis',
+    //   icdCode: 'ICD-10 O13.3',
+    //   detectionReason: 'Result: 11.2 g/dL (11.5 - 15.5)',
+    //   detailLabel: 'Result:',
+    //   detailValue: '11.2 g/dL',
+    //   detailReference: '(11.5 - 15.5)',
+    // },
+    // {
+    //   id: 'declined-advanced-maternal-age',
+    //   name: 'Advanced Maternal Age',
+    //   icdCode: 'ICD-10 O13.3',
+    //   detectionReason: 'Age: 36 (≥ 35)',
+    //   detailLabel: 'Age:',
+    //   detailValue: '36',
+    //   detailReference: '(≥ 35 )',
+    // },
   ]);
   readonly deletedProblems = signal<readonly SuggestedProblem[]>([
     {
       id: 'deleted-gestational-hypertension',
-      name: 'Gestational Hypertension',
-      icdCode: 'ICD-10 O13.3',
-      detectionReason: 'BP >140/90',
-    },
-    {
-      id: 'deleted-advanced-maternal-age',
-      name: 'Advanced Maternal Age',
-      icdCode: 'ICD-10 O13.3',
-      detectionReason: 'age ≥35',
-    },
+      name: 'Fracture of left second metatarsal',
+      icdCode: 'ICD-10 S92.322A',
+      detectionReason: 'Swelling on part',
+    }
   ]);
   readonly ignoredUnmatchedResultIds = signal<ReadonlySet<string>>(new Set());
   readonly suggestedProblemsExpanded = signal(true);
@@ -2849,6 +2912,9 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     if (chip.id === 'labs-3') {
       tooltip.tests = [{ label: 'Group B Strep Prenatal', showActions: true }];
     }
+    if (chip.id === 'labs-1') {
+      tooltip.resultRows = FIRST_TRIMESTER_LABS_RESULT_ROWS;
+    }
     if (chip.id === 'aneuploidy-1') {
       tooltip.notes =
         'First trimester limited ultrasound reviewed. Ultrasound dating is not consistent with LMP; EDD updated to June 15, 2026 based on the 8w4d ultrasound.';
@@ -2926,19 +2992,16 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       chip.id === 'home-blood-pressure-monitor' ||
       chip.id === 'gestational-hypertension-home-blood-pressure-monitor'
     ) {
-      tooltip.notes = undefined;
-      tooltip.postResultAllowOrder = true;
-      tooltip.postResultNotesPlaceholder =
-        'Add clinical notes about ordered, declined, or previously monitored blood pressure items...';
-      tooltip.postResultRemovedTests = [];
-      tooltip.postResultTests = [
-        {
-          actionState: 'active',
-          label: 'Ambulatory blood pressure monitor',
-          showActions: true,
-        },
-      ];
-      tooltip.resultRows = undefined;
+      tooltip.notes =
+        '24-hour ambulatory BP monitoring reviewed. Daytime average mildly elevated. Nighttime BP normal with a normal nocturnal dip. Continue home BP monitoring and recheck at next visit.';
+      tooltip.postResultAllowOrder = undefined;
+      tooltip.postResultNotesPlaceholder = undefined;
+      tooltip.postResultRemovedTests = undefined;
+      tooltip.postResultTests = undefined;
+      tooltip.resultColumns = ['Test name', 'Value', 'Ref. range'];
+      tooltip.resultRows = AMBULATORY_BLOOD_PRESSURE_RESULT_ROWS;
+      tooltip.resultTitle = 'Ambulatory blood pressure monitor';
+      tooltip.resultTitleLabel = 'Order Name:';
       tooltip.showSubmitFooter = true;
     }
     if (
@@ -4792,6 +4855,10 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   private vitalTooltipPreferredHeight(tooltip: VitalTooltip): number {
+    if (tooltip.emptyState) {
+      return 220;
+    }
+
     if (tooltip.history) {
       return 360;
     }
