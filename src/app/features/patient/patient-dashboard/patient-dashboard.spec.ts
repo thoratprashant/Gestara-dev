@@ -33,23 +33,23 @@ describe('PatientDashboard timeline', () => {
     expect(fixture.nativeElement.querySelector('.patient-summary')).toBeNull();
   });
 
-  it('starts with all four configured problem groups expanded and toggles each independently', () => {
+  it('starts with the three active problem groups expanded and toggles each independently', () => {
     const dashboard = new PatientDashboard();
     const groups = dashboard.pregnancyTimeline().groups;
 
-    expect(groups).toHaveLength(4);
+    expect(groups).toHaveLength(3);
     expect(groups.every((group) => dashboard.isTimelineGroupExpanded(group.id))).toBe(true);
 
-    dashboard.toggleTimelineGroup(groups[3].id);
-    expect(dashboard.isTimelineGroupExpanded(groups[3].id)).toBe(false);
+    dashboard.toggleTimelineGroup(groups[2].id);
+    expect(dashboard.isTimelineGroupExpanded(groups[2].id)).toBe(false);
     expect(dashboard.isTimelineGroupExpanded(groups[0].id)).toBe(true);
 
     dashboard.toggleTimelineGroup(groups[0].id);
     expect(dashboard.isTimelineGroupExpanded(groups[0].id)).toBe(false);
-    expect(dashboard.isTimelineGroupExpanded(groups[3].id)).toBe(false);
+    expect(dashboard.isTimelineGroupExpanded(groups[2].id)).toBe(false);
   });
 
-  it('uses the configured problem names and category labels without changing task chips', () => {
+  it('does not show the recommended Gestational Hypertension problem initially', () => {
     const dashboard = new PatientDashboard();
     const groups = dashboard.pregnancyTimeline().groups;
 
@@ -57,7 +57,6 @@ describe('PatientDashboard timeline', () => {
       'Routine Prenatal Care',
       'Elevated Blood Pressure Without Diagnosis of Hypertension',
       'Advanced Maternal Age',
-      'Gestational Hypertension without Proteinuria',
     ]);
     expect(groups.map((group) => group.rows.map((row) => row.label))).toEqual([
       [
@@ -72,14 +71,30 @@ describe('PatientDashboard timeline', () => {
       ],
       ['Home blood pressure monitoring', 'Screening pre-eclampsia labs'],
       ['Counseling', 'Ultrasounds', 'Antenatal surveillance'],
-      [
-        'Home blood pressure monitoring',
-        'Screening pre-eclampsia labs',
-        'Growth Ultrasound',
-        'Antenatal surveillance',
-      ],
     ]);
-    expect(groups.flatMap((group) => group.rows).flatMap((row) => row.chips)).toHaveLength(42);
+    expect(groups.flatMap((group) => group.rows).flatMap((row) => row.chips)).toHaveLength(27);
+  });
+
+  it('adds the recommended Gestational Hypertension categories and tasks to the timeline', () => {
+    const dashboard = new PatientDashboard();
+    const recommendation = dashboard.suggestedProblems()[0];
+
+    dashboard.acceptSuggestedProblem(recommendation);
+
+    const addedGroup = dashboard
+      .pregnancyTimeline()
+      .groups.find((group) => group.id === 'gestational-hypertension');
+    expect(dashboard.suggestedProblems()).not.toContainEqual(recommendation);
+    expect(addedGroup?.label).toBe('Gestational Hypertension');
+    expect(addedGroup?.rows.map((row) => row.label)).toEqual([
+      'Home blood pressure monitoring',
+      'Screening pre-eclampsia labs',
+      'Growth Ultrasound',
+      'Antenatal surveillance',
+    ]);
+    expect(addedGroup?.rows.flatMap((row) => row.chips)).toHaveLength(15);
+    expect(dashboard.isTimelineGroupExpanded('gestational-hypertension')).toBe(true);
+    expect(dashboard.canUndoTimeline()).toBe(true);
   });
 
   it('reorders timeline groups by drag and keyboard and keeps each change undoable', () => {
@@ -742,6 +757,59 @@ describe('PatientDashboard timeline', () => {
     });
   });
 
+  it('edits a problem name from the condition tooltip header', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const dashboard = fixture.componentInstance;
+    const group = dashboard.pregnancyTimeline().groups[1];
+    const toggle = fixture.nativeElement.querySelectorAll(
+      '.problem-timeline__group-toggle',
+    )[1] as HTMLButtonElement;
+
+    toggle.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    const tooltip = fixture.nativeElement.querySelector(
+      '#timeline-condition-tooltip',
+    ) as HTMLElement;
+    const editButton = tooltip.querySelector(
+      '.timeline-condition-tooltip__edit-name',
+    ) as HTMLButtonElement;
+    expect(editButton).toBeTruthy();
+    expect(
+      editButton.compareDocumentPosition(
+        tooltip.querySelector('.timeline-condition-tooltip__header-actions button:last-child')!,
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    editButton.click();
+    fixture.detectChanges();
+
+    const input = tooltip.querySelector(
+      '.timeline-condition-tooltip__name-input',
+    ) as HTMLInputElement;
+    const saveButton = tooltip.querySelector(
+      '.timeline-condition-tooltip__save-name',
+    ) as HTMLButtonElement;
+    expect(input.value).toBe(group.label);
+    expect(saveButton.disabled).toBe(false);
+
+    input.value = 'Pregnancy-related hypertension monitoring';
+    input.dispatchEvent(new Event('input'));
+    input.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    fixture.detectChanges();
+
+    expect(dashboard.pregnancyTimeline().groups[1].label).toBe(
+      'Pregnancy-related hypertension monitoring',
+    );
+    expect(tooltip.querySelector('h2')?.textContent?.trim()).toBe(
+      'Pregnancy-related hypertension monitoring',
+    );
+    expect(dashboard.timelineProblemNameEdit()).toBeNull();
+    expect(dashboard.canUndoTimeline()).toBe(true);
+  });
+
   it('confirms before removing a timeline problem', () => {
     const fixture = TestBed.createComponent(PatientDashboard);
     fixture.detectChanges();
@@ -791,8 +859,50 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     expect(dashboard.pregnancyTimeline().groups.some((item) => item.id === group.id)).toBe(false);
+    const deletedProblem = dashboard.deletedProblems().find(
+      (problem) => problem.timelineGroup?.id === group.id,
+    );
+    const deletedProblemsSection = fixture.nativeElement.querySelector(
+      '#deleted-problems-list',
+    ) as HTMLElement;
+    expect(deletedProblem).toMatchObject({
+      id: `deleted-${group.id}`,
+      name: group.label,
+      icdCode: `ICD-10 ${group.condition.tags[0].label}`,
+    });
+    expect(deletedProblemsSection.textContent).toContain(group.label);
+    expect(deletedProblemsSection.textContent).toContain(
+      `ICD-10 ${group.condition.tags[0].label}`,
+    );
     expect(fixture.nativeElement.querySelector('#timeline-condition-tooltip')).toBeNull();
     expect(dashboard.canUndoTimeline()).toBe(true);
+  });
+
+  it('restores a deleted problem with its categories and tasks', () => {
+    const dashboard = new PatientDashboard();
+    const group = dashboard.pregnancyTimeline().groups[0];
+    const originalRows = group.rows.map((row) => ({
+      id: row.id,
+      chips: row.chips.map((chip) => chip.id),
+    }));
+
+    dashboard.confirmTimelineProblemRemoval(group.id);
+    const deletedProblem = dashboard.deletedProblems().find(
+      (problem) => problem.timelineGroup?.id === group.id,
+    );
+
+    expect(deletedProblem).toBeTruthy();
+    dashboard.reactivateProblem(deletedProblem!, 'deleted');
+
+    const restoredGroup = dashboard.pregnancyTimeline().groups.find(
+      (item) => item.id === group.id,
+    );
+    expect(restoredGroup?.rows.map((row) => ({
+      id: row.id,
+      chips: row.chips.map((chip) => chip.id),
+    }))).toEqual(originalRows);
+    expect(dashboard.deletedProblems()).not.toContainEqual(deletedProblem);
+    expect(dashboard.isTimelineGroupExpanded(group.id)).toBe(true);
   });
 
   it('confirms resolution, saves notes, and moves the muted problem to the bottom', () => {
@@ -1265,7 +1375,9 @@ describe('PatientDashboard timeline', () => {
       '[aria-label="Remove Maternal serum AFP permanently"]',
     ) as HTMLButtonElement;
 
+    expect(removedOrders.classList).toContain('timeline-status-tooltip__orders-section');
     expect(removedOrders.textContent).toContain('Maternal serum AFP');
+    expect(removedOrders.textContent).toContain('Restore');
     expect(permanentRemove).toBeTruthy();
 
     permanentRemove.click();
@@ -1344,7 +1456,7 @@ describe('PatientDashboard timeline', () => {
       '[aria-label="Remove Fragile X permanently"]',
     ) as HTMLButtonElement;
     expect(removedOrders.textContent).toContain('Fragile X');
-    expect(removedOrders.textContent).toContain('Decline');
+    expect(removedOrders.textContent).toContain('Restore');
     expect(removedOrders.querySelector('.timeline-status-tooltip__order')).toBeNull();
     expect(permanentRemove).toBeTruthy();
 
@@ -2000,7 +2112,7 @@ describe('PatientDashboard timeline', () => {
       let action = item.querySelector('button') as HTMLButtonElement;
       const footer = tooltip.querySelector('.timeline-status-tooltip__bulk-actions') as HTMLElement;
 
-      expect(labTests.querySelector('h3')?.textContent?.trim()).toBe('Lab Tests:');
+      expect(labTests.querySelector('h3')?.textContent?.trim()).toBe('Orders:');
       expect(item.querySelector('label > span:last-child')?.textContent?.trim()).toBe(
         variant.itemLabel,
       );
@@ -2177,6 +2289,7 @@ describe('PatientDashboard timeline', () => {
 
   it('assigns the requested Gestational Hypertension tasks', () => {
     const dashboard = new PatientDashboard();
+    dashboard.acceptSuggestedProblem(dashboard.suggestedProblems()[0]);
     const rows = dashboard.pregnancyTimeline().groups[3].rows;
 
     expect(rows).toMatchObject([
@@ -2286,6 +2399,21 @@ describe('PatientDashboard timeline', () => {
     );
     expect(tooltip.querySelector('.timeline-status-tooltip__tests')).toBeTruthy();
     expect(tooltip.querySelector('#timeline-tooltip-other-test')).toBeTruthy();
+    const bulkActions = tooltip.querySelector(
+      '.timeline-status-tooltip__order-bulk-actions',
+    ) as HTMLElement;
+    expect(
+      Array.from(bulkActions.querySelectorAll('button'), (button) => button.textContent?.trim()),
+    ).toEqual(['Order All', 'Declined All']);
+    expect(tooltip.querySelector('.due-soon-tooltip__footer')).toBeNull();
+
+    (tooltip.querySelector('.timeline-status-tooltip__order') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(tooltip.querySelector('.timeline-status-tooltip__order-result-input')).toBeTruthy();
+    expect(
+      (tooltip.querySelector('.due-soon-tooltip__footer button') as HTMLButtonElement).disabled,
+    ).toBe(false);
     trigger.remove();
   });
 
@@ -2337,13 +2465,23 @@ describe('PatientDashboard timeline', () => {
     expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
     expect(dueSoonTooltip.textContent).toContain('Third trimester labs');
     expect(dueSoonTooltip.textContent).toContain('Scheduled: Week 24-30');
-    expect(dueSoonTooltip.textContent).toContain('Lab Tests:');
+    expect(dueSoonTooltip.textContent).toContain('Orders:');
     expect(dueSoonTooltip.textContent).toContain('1hr GTT');
     expect(dueSoonTooltip.textContent).toContain('CBC');
     expect(dueSoonTooltip.textContent).toContain('HIV antigen/antibody');
     expect(dueSoonTooltip.textContent).toContain('Syphilis antibody');
     expect(dueSoonTooltip.querySelector('.due-soon-tooltip__checklist')).toBeTruthy();
     expect(dueSoonTooltip.querySelector('.due-soon-tooltip__footer')).toBeTruthy();
+    expect(
+      Array.from(
+        dueSoonTooltip.querySelectorAll('.timeline-status-tooltip__order-bulk-actions button'),
+        (button) => button.textContent?.trim(),
+      ),
+    ).toEqual(['Order All', 'Declined All']);
+    const submitButton = dueSoonTooltip.querySelector(
+      '.due-soon-tooltip__footer button',
+    ) as HTMLButtonElement;
+    expect(submitButton.disabled).toBe(true);
 
     const firstOrderButton = Array.from(dueSoonTooltip.querySelectorAll('button')).find(
       (button) => button.textContent?.trim() === 'Order',
@@ -2352,6 +2490,8 @@ describe('PatientDashboard timeline', () => {
     fixture.detectChanges();
 
     expect(dueSoonTooltip.querySelector('.timeline-status-tooltip__test--ordered')).toBeTruthy();
+    expect(dueSoonTooltip.querySelector('.timeline-status-tooltip__order-result-input')).toBeTruthy();
+    expect(submitButton.disabled).toBe(false);
   });
 
   it('shows the Gestational Hypertension NST/BPP due-soon tests and actions', () => {
@@ -2412,6 +2552,101 @@ describe('PatientDashboard timeline', () => {
     tests = Array.from(checklist.querySelectorAll<HTMLElement>('.timeline-status-tooltip__test'));
     expect(tests[1].classList).not.toContain('timeline-status-tooltip__test--declined');
     expect(tests[1].querySelector('.timeline-status-tooltip__decline')).toBeTruthy();
+  });
+
+  it('shows NST and BPP orders for the requested due-soon hypertension tasks', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    for (const week of [29, 30, 31]) {
+      dashboard.showTimelineStatusTooltip(
+        {
+          id: `gestational-hypertension-nst-bpp-${week}`,
+          label: 'Twice weekly NST/BPP',
+          status: 'due-soon',
+          startWeek: week,
+          endWeek: week + 1,
+        },
+        { currentTarget: document.createElement('button') } as unknown as Event,
+      );
+      fixture.detectChanges();
+
+      const active = dashboard.activeDueSoonTooltip();
+      const tooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
+      const orders = Array.from(
+        tooltip.querySelectorAll('.timeline-status-tooltip__test-name'),
+        (order: unknown) => (order as HTMLElement).textContent?.trim(),
+      );
+
+      expect(active?.title).toBe('Twice weekly NST/BPP');
+      expect(active?.subtitle).toBe('Gestational Hypertension');
+      expect(active?.scheduledWeekRange).toBe(`Week ${week}-${week + 1}`);
+      expect(orders).toEqual(['NST', 'BPP']);
+      expect(tooltip.querySelectorAll('.timeline-status-tooltip__order')).toHaveLength(2);
+      expect(tooltip.querySelectorAll('.timeline-status-tooltip__decline')).toHaveLength(2);
+      expect(tooltip.querySelector('.timeline-status-tooltip__field')).toBeTruthy();
+      expect(tooltip.querySelector('.timeline-status-tooltip__notes--editable')).toBeTruthy();
+      expect(
+        (tooltip.querySelector('.due-soon-tooltip__footer button') as HTMLButtonElement).disabled,
+      ).toBe(true);
+    }
+  });
+
+  it('shows NST and BPP orders for every future antenatal-surveillance task', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+    const cases = [
+      ...[36, 37, 38, 39].map((week) => ({
+        id: `advanced-maternal-age-nst-bpp-${week}`,
+        label: 'NST/BPP',
+        problem: 'Advanced Maternal Age',
+        startWeek: week,
+      })),
+      ...[32, 33, 34, 35, 36, 37].map((week) => ({
+        id: `gestational-hypertension-nst-bpp-${week}`,
+        label: 'Twice weekly NST/BPP',
+        problem: 'Gestational Hypertension',
+        startWeek: week,
+      })),
+    ];
+
+    for (const testCase of cases) {
+      dashboard.showTimelineStatusTooltip(
+        {
+          id: testCase.id,
+          label: testCase.label,
+          status: 'future',
+          startWeek: testCase.startWeek,
+          endWeek: testCase.startWeek + 1,
+        },
+        { currentTarget: document.createElement('button') } as unknown as Event,
+      );
+      fixture.detectChanges();
+
+      const active = dashboard.activeTimelineStatusTooltip();
+      const tooltip = fixture.nativeElement.querySelector(
+        '#timeline-status-tooltip',
+      ) as HTMLElement;
+      const orders = Array.from(
+        tooltip.querySelectorAll('.timeline-status-tooltip__test-name'),
+        (order: unknown) => (order as HTMLElement).textContent?.trim(),
+      );
+
+      expect(active?.tooltip.title).toBe(testCase.label);
+      expect(active?.tooltip.subtitle).toBe(testCase.problem);
+      expect(active?.tooltip.schedule[0].value).toBe(
+        `Week ${testCase.startWeek}-${testCase.startWeek + 1}`,
+      );
+      expect(orders).toEqual(['NST', 'BPP']);
+      expect(tooltip.querySelector('.timeline-status-tooltip__orders-section')).toBeTruthy();
+      expect(tooltip.querySelectorAll('.timeline-status-tooltip__order')).toHaveLength(2);
+      expect(tooltip.querySelectorAll('.timeline-status-tooltip__decline')).toHaveLength(2);
+      expect(tooltip.querySelector('.timeline-status-tooltip__field')).toBeTruthy();
+      expect(tooltip.querySelector('.timeline-status-tooltip__notes--editable')).toBeTruthy();
+      expect(tooltip.querySelector('.due-soon-tooltip__footer')).toBeTruthy();
+    }
   });
 
   it('shows the Third Trimester counseling checklist with conditional item notes', () => {
@@ -2728,7 +2963,7 @@ describe('PatientDashboard timeline', () => {
           testsSection.querySelectorAll('.timeline-status-tooltip__screening-row'),
         ).toHaveLength(6);
       } else {
-        expect(testsSection.querySelector('h3')?.textContent?.trim()).toBe('Lab Tests:');
+        expect(testsSection.querySelector('h3')?.textContent?.trim()).toBe('Orders:');
         expect(testsSection.querySelector('.timeline-status-tooltip__test-list')).toBeTruthy();
         expect(testsSection.querySelector('.timeline-status-tooltip__test')).toBeTruthy();
       }
@@ -2921,6 +3156,7 @@ describe('PatientDashboard timeline', () => {
 
   it('limits the complete tooltip height only when vertical space is constrained', () => {
     const dashboard = new PatientDashboard();
+    dashboard.acceptSuggestedProblem(dashboard.suggestedProblems()[0]);
     const trigger = document.createElement('div');
     const originalInnerHeight = window.innerHeight;
     const lateChip = dashboard.pregnancyTimeline().groups[3].rows[0].chips[0];
@@ -3214,7 +3450,7 @@ describe('PatientDashboard timeline', () => {
     ).toEqual([
       'Routine Prenatal Care',
       'Elevated Blood Pressure Without Diagnosis of Hypertension',
-      'Gestational Hypertension without Proteinuria',
+      'Gestational Hypertension',
     ]);
     expect(
       Array.from(
@@ -3241,6 +3477,7 @@ describe('PatientDashboard timeline', () => {
 
   it('switches only late and future chips when they move across the current-week line', () => {
     const dashboard = new PatientDashboard();
+    dashboard.acceptSuggestedProblem(dashboard.suggestedProblems()[0]);
     const track = document.createElement('div');
     const chipElement = document.createElement('div');
     track.className = 'problem-timeline__track';

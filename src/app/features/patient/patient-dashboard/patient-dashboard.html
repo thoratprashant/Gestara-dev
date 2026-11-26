@@ -1972,7 +1972,7 @@
           <header class="due-soon-tooltip__header timeline-status-tooltip__header">
             <div class="timeline-status-tooltip__heading">
               <h2>{{ dueSoonTooltip.title }}</h2>
-              <p>Routine Prenatal Care</p>
+              <p>{{ dueSoonTooltip.subtitle }}</p>
             </div>
             <span
               class="due-soon-tooltip__badge timeline-status-tooltip__badge"
@@ -2012,6 +2012,7 @@
           <section
             class="due-soon-tooltip__checklist"
             [class.due-soon-tooltip__checklist--items]="dueSoonTooltip.checklistItems"
+            [class.timeline-status-tooltip__orders-section]="dueSoonTooltip.tests.length > 0"
             aria-label="Checklist items"
           >
             @if (dueSoonTooltip.checklistItems; as checklistItems) {
@@ -2139,7 +2140,17 @@
                 ></textarea>
               </label>
             } @else {
-              <h3>Orders:</h3>
+              <div class="timeline-status-tooltip__orders-header">
+                <h3>Orders:</h3>
+                @if (!dueSoonTooltip.readOnly) {
+                  <div class="timeline-status-tooltip__order-bulk-actions">
+                    <button type="button" (click)="orderAllDueSoonLabTests()">Order All</button>
+                    <button type="button" (click)="declineAllDueSoonLabTests()">
+                      Declined All
+                    </button>
+                  </div>
+                }
+              </div>
               <div class="timeline-status-tooltip__test-list">
                 @for (test of dueSoonTooltip.tests; track test.label) {
                   <div
@@ -2191,16 +2202,28 @@
                         ></button>
                       }
                     </div>
+                    @if (test.actionState === 'ordered') {
+                      <input
+                        class="timeline-status-tooltip__order-result-input"
+                        type="text"
+                        placeholder="Add order result"
+                        [attr.aria-label]="'Add order result for ' + test.label"
+                        [value]="test.orderResult || ''"
+                        (input)="setDueSoonOrderResult(test, $event)"
+                      />
+                    }
                   </div>
                 }
               </div>
 
               @if (dueSoonTooltip.removedTests.length) {
                 <section
-                  class="timeline-status-tooltip__tests timeline-status-tooltip__removed-orders"
+                  class="timeline-status-tooltip__tests timeline-status-tooltip__orders-section timeline-status-tooltip__removed-orders"
                   aria-label="Removed orders"
                 >
-                  <h3>Removed Orders:</h3>
+                  <div class="timeline-status-tooltip__orders-header">
+                    <h3>Removed Orders:</h3>
+                  </div>
                   <div class="timeline-status-tooltip__test-list">
                     @for (test of dueSoonTooltip.removedTests; track test.label) {
                       <div class="timeline-status-tooltip__test">
@@ -2272,7 +2295,13 @@
           </section>
 
           <footer class="due-soon-tooltip__footer">
-            <button type="button" (click)="saveDueSoonTaskProgress()">Submit</button>
+            <button
+              type="button"
+              [disabled]="dueSoonTooltip.tests.length > 0 && !dueSoonTooltip.ordersDirty"
+              (click)="saveDueSoonTaskProgress()"
+            >
+              Submit
+            </button>
           </footer>
         </div>
       </aside>
@@ -2641,8 +2670,29 @@
               activeStatusTooltip.tooltip.checklistItems?.length)
           ) {
             <!-- <div class="timeline-status-tooltip__divider"></div> -->
-            <section class="timeline-status-tooltip__tests" aria-label="Lab tests">
-              <h3>Orders:</h3>
+            <section
+              class="timeline-status-tooltip__tests"
+              [class.timeline-status-tooltip__orders-section]="
+                activeStatusTooltip.tooltip.checklistPlacement !== 'tests'
+              "
+              aria-label="Lab tests"
+            >
+              <div class="timeline-status-tooltip__orders-header">
+                <h3>Orders:</h3>
+                @if (
+                  activeStatusTooltip.tooltip.checklistPlacement !== 'tests' &&
+                  !activeStatusTooltip.readOnly
+                ) {
+                  <div class="timeline-status-tooltip__order-bulk-actions">
+                    <button type="button" (click)="orderAllTimelineTooltipTests()">
+                      Order All
+                    </button>
+                    <button type="button" (click)="declineAllTimelineTooltipTests()">
+                      Declined All
+                    </button>
+                  </div>
+                }
+              </div>
               @if (
                 activeStatusTooltip.tooltip.checklistPlacement === 'tests' &&
                   activeStatusTooltip.tooltip.checklistItems;
@@ -2756,13 +2806,7 @@
                               type="button"
                               aria-label="Remove test"
                               (click)="removeTimelineTooltipTest(test)"
-                            >
-                              <span
-                                class="timeline-status-tooltip__icon"
-                                data-icon="close"
-                                aria-hidden="true"
-                              ></span>
-                            </button>
+                            ></button>
                           }
                         </div>
                       }
@@ -2851,10 +2895,12 @@
 
           @if (activeStatusTooltip.tooltip.removedTests?.length) {
             <section
-              class="timeline-status-tooltip__tests timeline-status-tooltip__removed-orders"
+              class="timeline-status-tooltip__tests timeline-status-tooltip__orders-section timeline-status-tooltip__removed-orders"
               aria-label="Removed orders"
             >
-              <h3>Removed Orders:</h3>
+              <div class="timeline-status-tooltip__orders-header">
+                <h3>Removed Orders:</h3>
+              </div>
               <div class="timeline-status-tooltip__test-list">
                 @for (test of activeStatusTooltip.tooltip.removedTests; track test.label) {
                   <div
@@ -2873,44 +2919,19 @@
                       <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
                     </div>
                     <div class="timeline-status-tooltip__test-actions">
-                      @if (test.actionState === 'declined') {
-                        <button
-                          class="timeline-status-tooltip__reactivate"
-                          type="button"
-                          (click)="reactivateTimelineTooltipTest(test, true)"
-                        >
-                          Reactivate
-                        </button>
-                      } @else {
-                        @if (test.actionState !== 'ordered') {
-                          <button
-                            class="timeline-status-tooltip__order"
-                            type="button"
-                            (click)="orderTimelineTooltipTest(test, true)"
-                          >
-                            Order
-                          </button>
-                          <button
-                            class="timeline-status-tooltip__decline"
-                            type="button"
-                            (click)="declineTimelineTooltipTest(test, true)"
-                          >
-                            Decline
-                          </button>
-                        }
-                      }
+                      <button
+                        class="timeline-status-tooltip__reactivate"
+                        type="button"
+                        (click)="reactivateTimelineTooltipTest(test, true)"
+                      >
+                        Restore
+                      </button>
                       <button
                         class="timeline-status-tooltip__remove"
                         type="button"
                         [attr.aria-label]="'Remove ' + test.label + ' permanently'"
                         (click)="removeTimelineTooltipTest(test, true)"
-                      >
-                        <span
-                          class="timeline-status-tooltip__icon"
-                          data-icon="close"
-                          aria-hidden="true"
-                        ></span>
-                      </button>
+                      ></button>
                     </div>
                   </div>
                 }
@@ -2954,7 +2975,10 @@
             </label>
           }
 
-          @if (activeStatusTooltip.tooltip.showBulkActions) {
+          @if (
+            activeStatusTooltip.tooltip.showBulkActions &&
+            activeStatusTooltip.tooltip.checklistPlacement === 'tests'
+          ) {
             <div class="timeline-status-tooltip__bulk-actions">
               <button
                 class="timeline-status-tooltip__order-all"
@@ -3057,8 +3081,23 @@
           }
 
           @if (activeStatusTooltip.tooltip.postResultTests?.length) {
-            <section class="timeline-status-tooltip__tests" aria-label="Lab tests">
-              <h3>Orders:</h3>
+            <section
+              class="timeline-status-tooltip__tests timeline-status-tooltip__orders-section"
+              aria-label="Lab tests"
+            >
+              <div class="timeline-status-tooltip__orders-header">
+                <h3>Orders:</h3>
+                @if (!activeStatusTooltip.readOnly) {
+                  <div class="timeline-status-tooltip__order-bulk-actions">
+                    <button type="button" (click)="orderAllTimelineTooltipTests(true)">
+                      Order All
+                    </button>
+                    <button type="button" (click)="declineAllTimelineTooltipTests(true)">
+                      Declined All
+                    </button>
+                  </div>
+                }
+              </div>
               <div class="timeline-status-tooltip__test-list">
                 @for (test of activeStatusTooltip.tooltip.postResultTests; track test.label) {
                   <div
@@ -3066,6 +3105,7 @@
                     [class.timeline-status-tooltip__test--declined]="
                       test.actionState === 'declined'
                     "
+                    [class.timeline-status-tooltip__test--ordered]="test.actionState === 'ordered'"
                   >
                     <span
                       class="timeline-status-tooltip__icon"
@@ -3109,15 +3149,19 @@
                             type="button"
                             aria-label="Remove test"
                             (click)="removeTimelineTooltipPostResultTest(test)"
-                          >
-                            <span
-                              class="timeline-status-tooltip__icon"
-                              data-icon="close"
-                              aria-hidden="true"
-                            ></span>
-                          </button>
+                          ></button>
                         }
                       </div>
+                    }
+                    @if (test.actionState === 'ordered') {
+                      <input
+                        class="timeline-status-tooltip__order-result-input"
+                        type="text"
+                        placeholder="Add order result"
+                        [attr.aria-label]="'Add order result for ' + test.label"
+                        [value]="test.orderResult || ''"
+                        (input)="setTimelineTooltipPostResultOrderResult(test, $event)"
+                      />
                     }
                   </div>
                 }
@@ -3127,10 +3171,12 @@
 
           @if (activeStatusTooltip.tooltip.postResultRemovedTests?.length) {
             <section
-              class="timeline-status-tooltip__tests timeline-status-tooltip__removed-orders"
+              class="timeline-status-tooltip__tests timeline-status-tooltip__orders-section timeline-status-tooltip__removed-orders"
               aria-label="Removed orders"
             >
-              <h3>Removed Orders:</h3>
+              <div class="timeline-status-tooltip__orders-header">
+                <h3>Removed Orders:</h3>
+              </div>
               <div class="timeline-status-tooltip__test-list">
                 @for (
                   test of activeStatusTooltip.tooltip.postResultRemovedTests;
@@ -3151,46 +3197,19 @@
                       <span class="timeline-status-tooltip__test-name">{{ test.label }}</span>
                     </div>
                     <div class="timeline-status-tooltip__test-actions">
-                      @if (test.actionState === 'declined') {
-                        <button
-                          class="timeline-status-tooltip__reactivate"
-                          type="button"
-                          (click)="reactivateTimelineTooltipPostResultTest(test, true)"
-                        >
-                          Reactivate
-                        </button>
-                      } @else {
-                        @if (test.actionState !== 'ordered') {
-                          @if (activeStatusTooltip.tooltip.postResultAllowOrder) {
-                            <button
-                              class="timeline-status-tooltip__order"
-                              type="button"
-                              (click)="orderTimelineTooltipPostResultTest(test, true)"
-                            >
-                              Order
-                            </button>
-                          }
-                          <button
-                            class="timeline-status-tooltip__decline"
-                            type="button"
-                            (click)="declineTimelineTooltipPostResultTest(test, true)"
-                          >
-                            Decline
-                          </button>
-                        }
-                      }
+                    <button
+                      class="timeline-status-tooltip__reactivate"
+                      type="button"
+                      (click)="reactivateTimelineTooltipPostResultTest(test, true)"
+                    >
+                      Restore
+                    </button>
                       <button
                         class="timeline-status-tooltip__remove"
                         type="button"
                         [attr.aria-label]="'Remove ' + test.label + ' permanently'"
                         (click)="removeTimelineTooltipPostResultTest(test, true)"
-                      >
-                        <span
-                          class="timeline-status-tooltip__icon"
-                          data-icon="close"
-                          aria-hidden="true"
-                        ></span>
-                      </button>
+                    ></button>
                     </div>
                   </div>
                 }
@@ -3236,9 +3255,23 @@
             </footer>
           }
 
-          @if (activeStatusTooltip.tooltip.showSubmitFooter && !activeStatusTooltip.readOnly) {
+          @if (
+            (activeStatusTooltip.tooltip.showSubmitFooter ||
+              activeStatusTooltip.tooltip.ordersDirty) &&
+            !activeStatusTooltip.readOnly
+          ) {
             <footer class="due-soon-tooltip__footer">
-              <button type="button" (click)="hideTimelineStatusTooltip()">Submit</button>
+              <button
+                type="button"
+                [disabled]="
+                  !!(activeStatusTooltip.tooltip.tests?.length ||
+                    activeStatusTooltip.tooltip.postResultTests?.length) &&
+                  !activeStatusTooltip.tooltip.ordersDirty
+                "
+                (click)="hideTimelineStatusTooltip()"
+              >
+                Submit
+              </button>
             </footer>
           }
         </div>
@@ -3369,21 +3402,74 @@
           </footer>
         } @else {
           <header class="timeline-condition-tooltip__header">
-            <h2
-              [matTooltip]="group.label"
-              matTooltipClass="problem-name-tooltip"
-              matTooltipPosition="above"
-              [matTooltipShowDelay]="250"
-            >
-              {{ group.label }}
-            </h2>
-            <button
-              type="button"
-              [attr.aria-label]="'Close ' + group.label + ' details'"
-              (click)="hideTimelineGroupTooltip()"
-            >
-              <img src="assets/timeline-condition-tooltip/close.svg" alt="" aria-hidden="true" />
-            </button>
+            @if (timelineProblemNameEdit()?.groupId === group.id) {
+              <input
+                class="timeline-condition-tooltip__name-input"
+                type="text"
+                maxlength="120"
+                [value]="timelineProblemNameEdit()?.value"
+                [attr.aria-label]="'Edit problem name for ' + group.label"
+                (input)="updateTimelineProblemNameEdit($event)"
+                (keydown)="handleTimelineProblemNameEditKeydown($event)"
+              />
+            } @else {
+              <h2
+                [matTooltip]="group.label"
+                matTooltipClass="problem-name-tooltip"
+                matTooltipPosition="above"
+                [matTooltipShowDelay]="250"
+              >
+                {{ group.label }}
+              </h2>
+            }
+
+            <div class="timeline-condition-tooltip__header-actions">
+              @if (timelineProblemNameEdit()?.groupId === group.id) {
+                <button
+                  class="timeline-condition-tooltip__save-name"
+                  type="button"
+                  title="Save problem name"
+                  aria-label="Save problem name"
+                  [disabled]="!timelineProblemNameEdit()?.value?.trim()"
+                  (click)="saveTimelineProblemNameEdit()"
+                >
+                  <img
+                    src="assets/timeline-status-tooltip/reviewed-check.svg"
+                    alt=""
+                    aria-hidden="true"
+                  />
+                </button>
+                <button
+                  type="button"
+                  title="Cancel editing"
+                  aria-label="Cancel editing problem name"
+                  (click)="cancelTimelineProblemNameEdit()"
+                >
+                  <img src="assets/problem-dialog/close.svg" alt="" aria-hidden="true" />
+                </button>
+              } @else {
+                <button
+                  class="timeline-condition-tooltip__edit-name"
+                  type="button"
+                  title="Edit problem name"
+                  [attr.aria-label]="'Edit ' + group.label + ' problem name'"
+                  (click)="beginTimelineProblemNameEdit(group)"
+                >
+                  <img src="assets/problem-dialog/edit-inline.svg" alt="" aria-hidden="true" />
+                </button>
+              }
+              <button
+                type="button"
+                [attr.aria-label]="'Close ' + group.label + ' details'"
+                (click)="hideTimelineGroupTooltip()"
+              >
+                <img
+                  src="assets/timeline-condition-tooltip/close.svg"
+                  alt=""
+                  aria-hidden="true"
+                />
+              </button>
+            </div>
           </header>
 
           <div class="timeline-condition-tooltip__body">
@@ -3736,7 +3822,7 @@
                 </div>
                 <div class="order-picker__category order-picker__category--hypertension">
                   <div class="order-picker__category-heading">
-                    <h4>Gestational Hypertension without Proteinuria</h4>
+                    <h4>Gestational Hypertension</h4>
                     <div class="problem-review__problem-title">
                       <span>ICD-10 O13.3</span>
                     </div>
@@ -4252,13 +4338,13 @@
                 <p>
                   <strong>Vital Signs:</strong
                   ><span class="progress-note__alert"> BP 148/92 mmHg (elevated)</span>, Weight 165
-                  lbs (+22 lbs total gain), BMI 26.3
+                  lbs (+22 lbs total gain), BMI 25.8
                 </p>
                 <p>
-                  <strong>Fetal Assessment:</strong> FHR 142 bpm, regular rhythm. Fundal height 28
+                  <strong>Fetal Assessment:</strong> FHR 142 bpm, regular rhythm. Fundal height 29
                   cm (appropriate for gestational age).
                 </p>
-                <p><strong>Cervical Exam:</strong> Closed, thick, -3 station</p>
+                <!-- <p><strong>Cervical Exam:</strong> Closed, thick, -3 station</p> -->
               </section>
 
               <section class="note-block assessment-plan">

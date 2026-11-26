@@ -261,6 +261,7 @@ interface TimelineStatusTooltip {
   notes?: string;
   notePlaceholder?: string;
   notesPlaceholder?: string;
+  ordersDirty?: boolean;
   otherPlaceholder?: string;
   postResultAllowOrder?: boolean;
   postResultNotesPlaceholder?: string;
@@ -301,10 +302,12 @@ interface ActiveDueSoonTooltip {
   chipId: string;
   removedTests: TimelineStatusTooltipTest[];
   notes: string;
+  ordersDirty: boolean;
   readOnly: boolean;
   scheduledWeekRange: string;
   screeningRows?: TimelineStatusTooltipScreeningRow[];
   screeningTitle?: string;
+  subtitle: string;
   tests: TimelineStatusTooltipTest[];
   title: string;
 }
@@ -331,6 +334,11 @@ interface TimelineRow {
 interface TimelineRowEdit {
   groupId: string;
   rowId: string;
+  value: string;
+}
+
+interface TimelineProblemNameEdit {
+  groupId: string;
   value: string;
 }
 
@@ -372,6 +380,7 @@ interface SuggestedProblem {
   icdCode: string;
   detectionReason: string;
   dismissalNotes?: string;
+  timelineGroup?: TimelineGroup;
 }
 
 interface ActiveChipInteraction {
@@ -1343,6 +1352,11 @@ const NST_BPP_SURVEILLANCE_TESTS: ReadonlyArray<TimelineStatusTooltipTest> = [
   { label: 'NST only', showActions: true },
 ];
 
+const NST_BPP_ORDERS: ReadonlyArray<TimelineStatusTooltipTest> = [
+  { label: 'NST', showActions: true },
+  { label: 'BPP', showActions: true },
+];
+
 const DUE_SOON_DEFAULT_NOTES = '';
 
 const INITIAL_TIMELINE: PregnancyTimeline = {
@@ -1646,7 +1660,7 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
     {
       condition: TIMELINE_CONDITION_DETAILS['gestational-hypertension'],
       id: 'gestational-hypertension',
-      label: 'Gestational Hypertension without Proteinuria',
+      label: 'Gestational Hypertension',
       rows: [
         {
           id: 'laboratory-follow-up-task',
@@ -1938,6 +1952,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     },
   ];
   readonly activeTimelineGroupTooltip = signal<TimelineGroup | null>(null);
+  readonly timelineProblemNameEdit = signal<TimelineProblemNameEdit | null>(null);
   readonly timelineProblemPendingRemoval = signal<TimelineGroup | null>(null);
   readonly timelineProblemPendingResolution = signal<TimelineGroup | null>(null);
   readonly timelineProblemResolutionNotes = signal('');
@@ -2012,7 +2027,14 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     systolic: 0,
     weightGain: 0,
   });
-  readonly pregnancyTimeline = signal(this.cloneTimeline(INITIAL_TIMELINE));
+  readonly pregnancyTimeline = signal(
+    this.cloneTimeline({
+      ...INITIAL_TIMELINE,
+      groups: INITIAL_TIMELINE.groups.filter(
+        (group) => group.id !== 'gestational-hypertension',
+      ),
+    }),
+  );
   readonly editingTimelineRow = signal<TimelineRowEdit | null>(null);
   readonly hasActivePregnancy = computed(() => this.pregnancyTimeline().groups.length > 0);
   readonly suggestedProblems = signal<readonly SuggestedProblem[]>([
@@ -2059,7 +2081,11 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly declinedProblemsExpanded = signal(true);
   readonly deletedProblemsExpanded = signal(true);
   readonly expandedTimelineGroupIds = signal<ReadonlySet<string>>(
-    new Set(INITIAL_TIMELINE.groups.slice(0, 5).map((group) => group.id)),
+    new Set(
+      INITIAL_TIMELINE.groups
+        .filter((group) => group.id !== 'gestational-hypertension')
+        .map((group) => group.id),
+    ),
   );
   readonly weekTicks = [...Array.from({ length: 11 }, (_, index) => index * 4), 42];
   readonly timelineLegend: ReadonlyArray<{ label: string; status: TimelineStatus }> = [
@@ -2588,6 +2614,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   showTimelineGroupTooltip(group: TimelineGroup, event: Event): void {
     this.cancelTimelineGroupTooltipHide();
+    this.timelineProblemNameEdit.set(null);
     this.timelineProblemPendingRemoval.set(null);
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
@@ -2610,6 +2637,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   hideTimelineGroupTooltip(): void {
     this.cancelTimelineGroupTooltipHide();
+    this.timelineProblemNameEdit.set(null);
     this.timelineProblemPendingRemoval.set(null);
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
@@ -2618,7 +2646,11 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   scheduleTimelineGroupTooltipHide(): void {
-    if (this.timelineProblemPendingRemoval() || this.timelineProblemPendingResolution()) {
+    if (
+      this.timelineProblemNameEdit() ||
+      this.timelineProblemPendingRemoval() ||
+      this.timelineProblemPendingResolution()
+    ) {
       return;
     }
 
@@ -2631,6 +2663,73 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
   keepTimelineGroupTooltipOpen(): void {
     this.cancelTimelineGroupTooltipHide();
+  }
+
+  beginTimelineProblemNameEdit(group: TimelineGroup): void {
+    this.cancelTimelineGroupTooltipHide();
+    this.timelineProblemNameEdit.set({ groupId: group.id, value: group.label });
+
+    window.setTimeout(() => {
+      const input = document.querySelector<HTMLInputElement>(
+        '#timeline-condition-tooltip .timeline-condition-tooltip__name-input',
+      );
+      input?.focus();
+      input?.select();
+    });
+  }
+
+  updateTimelineProblemNameEdit(event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.timelineProblemNameEdit.update((edit) => (edit ? { ...edit, value } : null));
+  }
+
+  saveTimelineProblemNameEdit(): void {
+    const edit = this.timelineProblemNameEdit();
+    const label = edit?.value.trim();
+
+    if (!edit || !label) {
+      return;
+    }
+
+    const currentGroup = this.pregnancyTimeline().groups.find(
+      (group) => group.id === edit.groupId,
+    );
+
+    if (!currentGroup || currentGroup.label === label) {
+      this.timelineProblemNameEdit.set(null);
+      return;
+    }
+
+    this.rememberTimeline();
+    this.pregnancyTimeline.update((timeline) => ({
+      ...timeline,
+      groups: timeline.groups.map((group) =>
+        group.id === edit.groupId ? { ...group, label } : group,
+      ),
+    }));
+    const updatedGroup = this.pregnancyTimeline().groups.find(
+      (group) => group.id === edit.groupId,
+    );
+
+    if (updatedGroup) {
+      this.activeTimelineGroupTooltip.set(updatedGroup);
+    }
+
+    this.timelineProblemNameEdit.set(null);
+  }
+
+  cancelTimelineProblemNameEdit(): void {
+    this.timelineProblemNameEdit.set(null);
+  }
+
+  handleTimelineProblemNameEditKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.saveTimelineProblemNameEdit();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelTimelineProblemNameEdit();
+    }
   }
 
   private resizeTimelineGroupTooltipForConfirmation(preferredHeight: number): void {
@@ -2690,6 +2789,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     this.updateDueSoonTooltip((active) => ({
       ...active,
+      ordersDirty: true,
       tests: [...active.tests, { label, showActions: true }],
     }));
     input.value = '';
@@ -2772,13 +2872,45 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   ): void {
     this.updateDueSoonTooltip((active) => ({
       ...active,
+      ordersDirty: true,
       tests: active.tests.map((item) => (item === test ? { ...item, actionState } : item)),
+    }));
+  }
+
+  orderAllDueSoonLabTests(): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      ordersDirty: true,
+      tests: active.tests.map((test) => ({ ...test, actionState: 'ordered' })),
+    }));
+  }
+
+  declineAllDueSoonLabTests(): void {
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      ordersDirty: true,
+      tests: active.tests.map((test) => ({
+        ...test,
+        actionState: 'declined',
+        orderResult: undefined,
+      })),
+    }));
+  }
+
+  setDueSoonOrderResult(test: TimelineStatusTooltipTest, event: Event): void {
+    const orderResult = (event.target as HTMLInputElement).value;
+
+    this.updateDueSoonTooltip((active) => ({
+      ...active,
+      ordersDirty: true,
+      tests: active.tests.map((item) => (item === test ? { ...item, orderResult } : item)),
     }));
   }
 
   declineDueSoonLabTest(test: TimelineStatusTooltipTest): void {
     this.updateDueSoonTooltip((active) => ({
       ...active,
+      ordersDirty: true,
       tests: [
         ...active.tests.filter((item) => item !== test),
         { ...test, actionState: 'declined' },
@@ -2789,6 +2921,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   removeDueSoonLabTest(test: TimelineStatusTooltipTest): void {
     this.updateDueSoonTooltip((active) => ({
       ...active,
+      ordersDirty: true,
       removedTests: [...active.removedTests, { ...test, actionState: 'active' }],
       tests: active.tests.filter((item) => item !== test),
     }));
@@ -2797,6 +2930,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   restoreDueSoonRemovedTest(test: TimelineStatusTooltipTest): void {
     this.updateDueSoonTooltip((active) => ({
       ...active,
+      ordersDirty: true,
       removedTests: active.removedTests.filter((item) => item !== test),
       tests: [...active.tests, { ...test, actionState: 'active' }],
     }));
@@ -2805,6 +2939,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   permanentlyRemoveDueSoonTest(test: TimelineStatusTooltipTest): void {
     this.updateDueSoonTooltip((active) => ({
       ...active,
+      ordersDirty: true,
       removedTests: active.removedTests.filter((item) => item !== test),
     }));
   }
@@ -3035,6 +3170,22 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tooltip.resultRows = GROWTH_ULTRASOUND_RESULT_ROWS;
       tooltip.resultTitle = 'Obstetric Ultrasound - Growth';
     }
+    const isAdvancedMaternalAgeNstBpp = /^advanced-maternal-age-nst-bpp-(36|37|38|39)$/.test(
+      chip.id,
+    );
+    const isGestationalHypertensionFutureNstBpp =
+      /^gestational-hypertension-nst-bpp-(32|33|34|35|36|37)$/.test(chip.id);
+
+    if (isAdvancedMaternalAgeNstBpp || isGestationalHypertensionFutureNstBpp) {
+      tooltip.subtitle = isAdvancedMaternalAgeNstBpp
+        ? 'Advanced Maternal Age'
+        : 'Gestational Hypertension';
+      tooltip.tests = NST_BPP_ORDERS.map((test) => ({ ...test }));
+      tooltip.otherPlaceholder = 'Enter test name...';
+      tooltip.notesPlaceholder =
+        'Add clinical notes about ordered, declined, or previously tested NST/BPP items...';
+      tooltip.showSubmitFooter = true;
+    }
     const triggerBounds = trigger.getBoundingClientRect();
     const preferredWidth = 468;
     const width = Math.min(preferredWidth, Math.max(260, window.innerWidth - 24));
@@ -3114,6 +3265,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const isGestationalHypertensionNstBpp = /^gestational-hypertension-nst-bpp-(28|29|30|31)$/.test(
       chip.id,
     );
+    const usesShortNstBppOrders = /^gestational-hypertension-nst-bpp-(29|30|31)$/.test(chip.id);
 
     this.timelineStatusTooltipPosition.set({
       left,
@@ -3132,6 +3284,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         : undefined,
       chipId: chip.id,
       notes: savedProgress?.notes ?? DUE_SOON_DEFAULT_NOTES,
+      ordersDirty: false,
       readOnly,
       removedTests: savedProgress?.removedTests.map((test) => ({ ...test })) ?? [],
       scheduledWeekRange: this.timelineScheduledWeekRange(chip.startWeek, chip.endWeek),
@@ -3141,14 +3294,19 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
           }))
         : undefined,
       screeningTitle: isThirdTrimesterScreening ? 'Prenatal Screening' : undefined,
+      subtitle: isGestationalHypertensionNstBpp
+        ? 'Gestational Hypertension'
+        : 'Routine Prenatal Care',
       tests:
         isThirdTrimesterCounseling || isThirdTrimesterScreening
           ? []
           : (
               savedProgress?.tests ??
-              (isGestationalHypertensionNstBpp
-                ? NST_BPP_SURVEILLANCE_TESTS
-                : THIRD_TRIMESTER_LAB_TESTS)
+              (usesShortNstBppOrders
+                ? NST_BPP_ORDERS
+                : isGestationalHypertensionNstBpp
+                  ? NST_BPP_SURVEILLANCE_TESTS
+                  : THIRD_TRIMESTER_LAB_TESTS)
             ).map((test) => ({ ...test })),
       title: chip.label,
     });
@@ -3318,6 +3476,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       tests: [...(tooltip.tests ?? []), { label, showActions: true }],
     }));
     input.value = '';
@@ -3403,6 +3562,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   ): void {
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       removedTests: tooltip.removedTests?.map((item) =>
         item === test ? { ...item, actionState } : item,
       ),
@@ -3416,6 +3576,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   ): void {
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       postResultTests: tooltip.postResultTests?.map((item) =>
         item === test ? { ...item, actionState } : item,
       ),
@@ -3425,6 +3586,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   orderTimelineTooltipPostResultTest(test: TimelineStatusTooltipTest, fromRemoved = false): void {
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       postResultRemovedTests: fromRemoved
         ? tooltip.postResultRemovedTests?.map((item) =>
             item === test ? { ...item, actionState: 'ordered' } : item,
@@ -3443,6 +3605,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       if (fromRemoved) {
         return {
           ...tooltip,
+          ordersDirty: true,
           postResultRemovedTests: tooltip.postResultRemovedTests?.filter((item) => item !== test),
           postResultTests: [
             ...(tooltip.postResultTests ?? []),
@@ -3453,6 +3616,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
       return {
         ...tooltip,
+        ordersDirty: true,
         postResultTests: [
           ...(tooltip.postResultTests?.filter((item) => item !== test) ?? []),
           { ...test, actionState: 'declined' as const },
@@ -3472,6 +3636,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       postResultRemovedTests: tooltip.postResultRemovedTests?.filter((item) => item !== test),
       postResultTests: [...(tooltip.postResultTests ?? []), { ...test, actionState: 'active' }],
     }));
@@ -3482,12 +3647,14 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       if (fromRemoved) {
         return {
           ...tooltip,
+          ordersDirty: true,
           postResultRemovedTests: tooltip.postResultRemovedTests?.filter((item) => item !== test),
         };
       }
 
       return {
         ...tooltip,
+        ordersDirty: true,
         postResultRemovedTests: [
           ...(tooltip.postResultRemovedTests ?? []),
           { ...test, actionState: 'active' },
@@ -3502,6 +3669,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       if (fromRemoved) {
         return {
           ...tooltip,
+          ordersDirty: true,
           removedTests: tooltip.removedTests?.filter((item) => item.label !== test.label),
           tests: [...(tooltip.tests ?? []), { ...test, actionState: 'declined' as const }],
         };
@@ -3512,7 +3680,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         { ...test, actionState: 'declined' as const },
       ];
 
-      return { ...tooltip, tests: reordered };
+      return { ...tooltip, ordersDirty: true, tests: reordered };
     });
   }
 
@@ -3524,6 +3692,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       removedTests: tooltip.removedTests?.filter((item) => item.label !== test.label),
       tests: [...(tooltip.tests ?? []), { ...test, actionState: 'active' }],
     }));
@@ -3536,6 +3705,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       if (fromRemoved) {
         return {
           ...tooltip,
+          ordersDirty: true,
           removedTests: tooltip.removedTests?.filter((item) => item.label !== test.label),
           tests: [orderedTest, ...(tooltip.tests ?? [])],
         };
@@ -3543,6 +3713,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
       return {
         ...tooltip,
+        ordersDirty: true,
         tests: tooltip.tests?.map((item) => (item === test ? orderedTest : item)),
       };
     });
@@ -3553,8 +3724,48 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     this.updateTimelineTooltip((tooltip) => ({
       ...tooltip,
+      ordersDirty: true,
       tests: tooltip.tests?.map((item) =>
         item === test ? { ...item, orderResult: input.value } : item,
+      ),
+    }));
+  }
+
+  orderAllTimelineTooltipTests(postResult = false): void {
+    this.updateTimelineTooltip((tooltip) => {
+      const key = postResult ? 'postResultTests' : 'tests';
+      const tests = tooltip[key]?.map((test) =>
+        test.showActions ? { ...test, actionState: 'ordered' as const } : test,
+      );
+
+      return { ...tooltip, [key]: tests, ordersDirty: true };
+    });
+  }
+
+  declineAllTimelineTooltipTests(postResult = false): void {
+    this.updateTimelineTooltip((tooltip) => {
+      const key = postResult ? 'postResultTests' : 'tests';
+      const tests = tooltip[key]?.map((test) =>
+        test.showActions
+          ? { ...test, actionState: 'declined' as const, orderResult: undefined }
+          : test,
+      );
+
+      return { ...tooltip, [key]: tests, ordersDirty: true };
+    });
+  }
+
+  setTimelineTooltipPostResultOrderResult(
+    test: TimelineStatusTooltipTest,
+    event: Event,
+  ): void {
+    const orderResult = (event.target as HTMLInputElement).value;
+
+    this.updateTimelineTooltip((tooltip) => ({
+      ...tooltip,
+      ordersDirty: true,
+      postResultTests: tooltip.postResultTests?.map((item) =>
+        item === test ? { ...item, orderResult } : item,
       ),
     }));
   }
@@ -3629,12 +3840,14 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       if (fromRemoved) {
         return {
           ...tooltip,
+          ordersDirty: true,
           removedTests: tooltip.removedTests?.filter((item) => item !== test),
         };
       }
 
       return {
         ...tooltip,
+        ordersDirty: true,
         removedTests: [...(tooltip.removedTests ?? []), { ...test, actionState: 'active' }],
         tests: tooltip.tests?.filter((item) => item !== test),
       };
@@ -3808,11 +4021,32 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   confirmTimelineProblemRemoval(groupId: string): void {
+    const group = this.pregnancyTimeline().groups.find((item) => item.id === groupId);
+
+    if (!group) {
+      return;
+    }
+
     this.rememberTimeline();
     this.pregnancyTimeline.update((timeline) => ({
       ...timeline,
       groups: timeline.groups.filter((group) => group.id !== groupId),
     }));
+    const icdCode = group.condition.tags[0]?.label || 'Unspecified';
+    const deletedProblem: SuggestedProblem = {
+      detectionReason: 'Removed from Problem List & Timeline',
+      icdCode: icdCode.startsWith('ICD-10') ? icdCode : `ICD-10 ${icdCode}`,
+      id: `deleted-${group.id}`,
+      name: group.label,
+      timelineGroup: this.cloneTimelineGroup(group),
+    };
+    this.deletedProblems.update((problems) => [
+      ...problems.filter(
+        (problem) => problem.timelineGroup?.id !== group.id && problem.id !== deletedProblem.id,
+      ),
+      deletedProblem,
+    ]);
+    this.deletedProblemsExpanded.set(true);
     this.expandedTimelineGroupIds.update((expandedIds) => {
       const nextExpandedIds = new Set(expandedIds);
       nextExpandedIds.delete(groupId);
@@ -4127,6 +4361,25 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   reactivateProblem(problem: SuggestedProblem, source: 'declined' | 'deleted'): void {
     const sourceProblems = source === 'declined' ? this.declinedProblems : this.deletedProblems;
     sourceProblems.update((problems) => problems.filter((item) => item.id !== problem.id));
+
+    if (source === 'deleted' && problem.timelineGroup) {
+      const restoredGroup = this.cloneTimelineGroup(problem.timelineGroup);
+
+      if (this.pregnancyTimeline().groups.some((group) => group.id === restoredGroup.id)) {
+        return;
+      }
+
+      this.rememberTimeline();
+      this.pregnancyTimeline.update((timeline) => ({
+        ...timeline,
+        groups: [...timeline.groups, restoredGroup],
+      }));
+      this.expandedTimelineGroupIds.update((expandedIds) =>
+        new Set(expandedIds).add(restoredGroup.id),
+      );
+      return;
+    }
+
     this.addTimelineProblem(problem.name);
   }
 
@@ -4983,30 +5236,58 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   }
 
   private addTimelineProblem(name: string): void {
+    const recommendedGroup =
+      name === 'Gestational Hypertension'
+        ? INITIAL_TIMELINE.groups.find((group) => group.id === 'gestational-hypertension')
+        : undefined;
+    const existingRecommendedGroup = recommendedGroup
+      ? this.pregnancyTimeline().groups.some((group) => group.id === recommendedGroup.id)
+      : false;
+
+    if (existingRecommendedGroup) {
+      return;
+    }
+
     this.rememberTimeline();
-    const problemId = `custom-problem-${++this.timelineProblemSequence}`;
+    const problemId = recommendedGroup?.id ?? `custom-problem-${++this.timelineProblemSequence}`;
 
     this.pregnancyTimeline.update((timeline) => ({
       ...timeline,
       groups: [
         ...timeline.groups,
-        {
-          condition: {
-            description: `Patient-specific condition added to the problem list: ${name}.`,
-            tags: [
-              { label: 'Patient added', tone: 'purple' },
-              { label: 'Active', tone: 'pink' },
-              { label: 'Clinical', tone: 'blue' },
-              { label: 'Follow-up', tone: 'teal' },
-            ],
-          },
-          id: problemId,
-          label: name,
-          rows: [],
-        },
+        recommendedGroup
+          ? this.cloneTimelineGroup(recommendedGroup)
+          : {
+              condition: {
+                description: `Patient-specific condition added to the problem list: ${name}.`,
+                tags: [
+                  { label: 'Patient added', tone: 'purple' },
+                  { label: 'Active', tone: 'pink' },
+                  { label: 'Clinical', tone: 'blue' },
+                  { label: 'Follow-up', tone: 'teal' },
+                ],
+              },
+              id: problemId,
+              label: name,
+              rows: [],
+            },
       ],
     }));
     this.expandedTimelineGroupIds.update((expandedIds) => new Set(expandedIds).add(problemId));
+  }
+
+  private cloneTimelineGroup(group: TimelineGroup): TimelineGroup {
+    return {
+      ...group,
+      condition: {
+        ...group.condition,
+        tags: group.condition.tags.map((tag) => ({ ...tag })),
+      },
+      rows: group.rows.map((row) => ({
+        ...row,
+        chips: row.chips.map((chip) => ({ ...chip })),
+      })),
+    };
   }
 
   private rememberTimeline(): void {
