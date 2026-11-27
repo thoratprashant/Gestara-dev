@@ -2069,6 +2069,21 @@
                   }
                 }
               </div>
+
+              @if (dueSoonTooltip.notesPlaceholder; as notesPlaceholder) {
+                <label
+                  class="timeline-status-tooltip__notes timeline-status-tooltip__notes--editable timeline-status-tooltip__checklist-notes"
+                >
+                  <span>Notes:</span>
+                  <textarea
+                    rows="3"
+                    [readOnly]="dueSoonTooltip.readOnly"
+                    [value]="dueSoonTooltip.notes"
+                    [placeholder]="notesPlaceholder"
+                    (input)="updateDueSoonNotes($event)"
+                  ></textarea>
+                </label>
+              }
             } @else if (dueSoonTooltip.screeningRows; as screeningRows) {
               <p
                 class="timeline-status-tooltip__result-title timeline-status-tooltip__screening-title"
@@ -2965,7 +2980,13 @@
           }
 
           @if (activeStatusTooltip.tooltip.notesPlaceholder) {
-            <label class="timeline-status-tooltip__notes timeline-status-tooltip__notes--editable">
+            <label
+              class="timeline-status-tooltip__notes timeline-status-tooltip__notes--editable"
+              [class.timeline-status-tooltip__checklist-notes]="
+                activeStatusTooltip.tooltip.checklistItems &&
+                activeStatusTooltip.tooltip.checklistPlacement !== 'tests'
+              "
+            >
               <span>Notes:</span>
               <textarea
                 rows="3"
@@ -3218,7 +3239,13 @@
           }
 
           @if (activeStatusTooltip.tooltip.notes) {
-            <label class="timeline-status-tooltip__notes">
+            <label
+              class="timeline-status-tooltip__notes"
+              [class.timeline-status-tooltip__checklist-notes]="
+                activeStatusTooltip.tooltip.checklistItems &&
+                activeStatusTooltip.tooltip.checklistPlacement !== 'tests'
+              "
+            >
               <span>Notes:</span>
               <textarea
                 readonly
@@ -3329,6 +3356,22 @@
               <span>Problem to resolve</span>
               <strong>{{ group.condition.tags[0].label }} - {{ group.label }}</strong>
             </div>
+            <label class="timeline-condition-tooltip__transfer-field">
+              <span>Transfer this to another problem?</span>
+              <span class="timeline-condition-tooltip__select-wrap">
+                <select
+                  aria-label="Transfer categories and tasks to another problem"
+                  [value]="timelineProblemTransferTargetId()"
+                  (change)="updateTimelineProblemTransferTarget($event)"
+                >
+                  <option value="">Select a problem</option>
+                  @for (problem of timelineProblemTransferTargets(group.id); track problem.id) {
+                    <option [value]="problem.id">{{ problem.label }}</option>
+                  }
+                </select>
+                <img src="assets/problem-dialog/chevron-down.svg" alt="" aria-hidden="true" />
+              </span>
+            </label>
             <label class="timeline-condition-tooltip__notes-editor">
               <span>Notes</span>
               <textarea

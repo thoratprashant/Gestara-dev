@@ -929,6 +929,22 @@ describe('PatientDashboard timeline', () => {
     ) as HTMLElement;
     expect(confirmation.getAttribute('role')).toBe('alertdialog');
     expect(confirmation.textContent).toContain('Resolve Problem');
+    expect(confirmation.textContent).toContain('Transfer this to another problem?');
+    const transferSelect = confirmation.querySelector(
+      '.timeline-condition-tooltip__select-wrap select',
+    ) as HTMLSelectElement;
+    const transferOptions = Array.from(
+      transferSelect.options,
+      (option) => option.textContent,
+    );
+    expect(transferOptions).toEqual([
+      'Select a problem',
+      ...dashboard
+        .pregnancyTimeline()
+        .groups.filter((problem) => problem.id !== group.id)
+        .map((problem) => problem.label),
+    ]);
+    expect(transferOptions).not.toContain(group.label);
     expect(confirmation.textContent).toContain(`Mark “${group.label}” as resolved?`);
 
     const notes = confirmation.querySelector('textarea') as HTMLTextAreaElement;
@@ -947,6 +963,7 @@ describe('PatientDashboard timeline', () => {
       resolutionNotes: 'Reviewed with the patient; no further follow-up is needed.',
       resolved: true,
     });
+    expect(resolvedGroup?.rows).toEqual(group.rows);
 
     const renderedGroups = fixture.nativeElement.querySelectorAll(
       '.problem-timeline__group',
@@ -991,6 +1008,120 @@ describe('PatientDashboard timeline', () => {
     ) as HTMLElement;
     expect(restoredGroup.classList.contains('problem-timeline__group--resolved')).toBe(false);
     expect(fixture.nativeElement.querySelector('#timeline-condition-tooltip')).toBeNull();
+    expect(dashboard.canUndoTimeline()).toBe(true);
+  });
+
+  it('transfers resolved categories and tasks to the selected problem as one undoable change', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const dashboard = fixture.componentInstance;
+    const source = dashboard.pregnancyTimeline().groups[1];
+    const target = dashboard.pregnancyTimeline().groups[0];
+    const targetRowIds = target.rows.map((row) => row.id);
+    const sourceRowIds = source.rows.map((row) => row.id);
+    const toggle = fixture.nativeElement.querySelectorAll(
+      '.problem-timeline__group-toggle',
+    )[1] as HTMLButtonElement;
+
+    toggle.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__resolve',
+    ) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const confirmation = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip--resolve-confirmation',
+    ) as HTMLElement;
+    const transferSelect = confirmation.querySelector(
+      '.timeline-condition-tooltip__select-wrap select',
+    ) as HTMLSelectElement;
+    transferSelect.value = target.id;
+    transferSelect.dispatchEvent(new Event('change'));
+
+    (confirmation.querySelector(
+      '.timeline-condition-tooltip__confirm-resolve',
+    ) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const updatedTarget = dashboard.pregnancyTimeline().groups.find(
+      (group) => group.id === target.id,
+    );
+    const resolvedSource = dashboard.pregnancyTimeline().groups.at(-1);
+    expect(updatedTarget?.rows.slice(0, targetRowIds.length).map((row) => row.id)).toEqual(
+      targetRowIds,
+    );
+    expect(updatedTarget?.rows.slice(targetRowIds.length).map((row) => row.id)).toEqual(
+      sourceRowIds,
+    );
+    expect(resolvedSource).toMatchObject({ id: source.id, resolved: true, rows: [] });
+    expect(dashboard.isTimelineGroupExpanded(target.id)).toBe(true);
+    expect(dashboard.canUndoTimeline()).toBe(true);
+
+    dashboard.undoTimelineChange();
+    expect(
+      dashboard.pregnancyTimeline().groups.find((group) => group.id === target.id)?.rows,
+    ).toHaveLength(targetRowIds.length);
+    expect(
+      dashboard.pregnancyTimeline().groups.find((group) => group.id === source.id)?.rows,
+    ).toHaveLength(sourceRowIds.length);
+  });
+
+  it('restores transferred categories and tasks when the resolved problem is reactivated', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    fixture.detectChanges();
+
+    const dashboard = fixture.componentInstance;
+    const source = dashboard.pregnancyTimeline().groups[1];
+    const target = dashboard.pregnancyTimeline().groups[0];
+    const sourceRowIds = source.rows.map((row) => row.id);
+    const targetRowIds = target.rows.map((row) => row.id);
+    const sourceToggle = fixture.nativeElement.querySelectorAll(
+      '.problem-timeline__group-toggle',
+    )[1] as HTMLButtonElement;
+
+    sourceToggle.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+    (fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__resolve',
+    ) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const confirmation = fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip--resolve-confirmation',
+    ) as HTMLElement;
+    const transferSelect = confirmation.querySelector(
+      '.timeline-condition-tooltip__select-wrap select',
+    ) as HTMLSelectElement;
+    transferSelect.value = target.id;
+    transferSelect.dispatchEvent(new Event('change'));
+    (confirmation.querySelector(
+      '.timeline-condition-tooltip__confirm-resolve',
+    ) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const resolvedToggle = Array.from(
+      fixture.nativeElement.querySelectorAll('.problem-timeline__group-toggle'),
+    ).at(-1) as HTMLButtonElement;
+    resolvedToggle.dispatchEvent(new MouseEvent('mouseenter'));
+    fixture.detectChanges();
+
+    (fixture.nativeElement.querySelector(
+      '.timeline-condition-tooltip__reactivate',
+    ) as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    const restoredSource = dashboard.pregnancyTimeline().groups.find(
+      (group) => group.id === source.id,
+    );
+    const cleanedTarget = dashboard.pregnancyTimeline().groups.find(
+      (group) => group.id === target.id,
+    );
+    expect(restoredSource?.resolved).toBe(false);
+    expect(restoredSource?.rows.map((row) => row.id)).toEqual(sourceRowIds);
+    expect(cleanedTarget?.rows.map((row) => row.id)).toEqual(targetRowIds);
+    expect(dashboard.pregnancyTimeline().groups[1].id).toBe(source.id);
     expect(dashboard.canUndoTimeline()).toBe(true);
   });
 
@@ -2033,6 +2164,7 @@ describe('PatientDashboard timeline', () => {
     expect(tooltip.querySelector('.timeline-status-tooltip__result-table')).toBeNull();
     const notes = tooltip.querySelector('.timeline-status-tooltip__notes') as HTMLElement;
     expect(notes).toBeTruthy();
+    expect(notes.classList).toContain('timeline-status-tooltip__checklist-notes');
     expect(checklist.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     expect((notes.querySelector('textarea') as HTMLTextAreaElement).value).toBe(
       'Influenza immunization completed. COVID immunization remains pending and was reviewed with the patient.',
@@ -2064,6 +2196,91 @@ describe('PatientDashboard timeline', () => {
     (footer.querySelector('button') as HTMLButtonElement).click();
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('#timeline-status-tooltip')).toBeNull();
+  });
+
+  it('shows TDaP and RSV immunizations in the shared checklist layout', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'immunization-tdap',
+        label: 'TDaP',
+        status: 'due-soon',
+        startWeek: 27,
+        endWeek: 36,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    let tooltip = fixture.nativeElement.querySelector('#due-soon-tooltip') as HTMLElement;
+    let checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    let checkbox = checklist.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    let notes = checklist.querySelector(
+      '.timeline-status-tooltip__notes--editable textarea',
+    ) as HTMLTextAreaElement;
+
+    expect(tooltip.querySelector('.timeline-status-tooltip__heading p')?.textContent?.trim()).toBe(
+      'Routine Prenatal Care',
+    );
+    expect(checklist.textContent).toContain('Checklist Items');
+    expect(checklist.textContent).toContain('0 of 1 completed');
+    expect(checklist.textContent).toContain('TDaP');
+    expect(checkbox.checked).toBe(false);
+    expect(checklist.querySelector('.timeline-status-tooltip__orders-header')).toBeNull();
+    expect(notes.closest('label')?.classList).toContain(
+      'timeline-status-tooltip__checklist-notes',
+    );
+    expect(
+      checklist.querySelector('.due-soon-tooltip__items')?.compareDocumentPosition(notes),
+    ).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notes.placeholder).toBe('Add clinical notes about the TDaP immunization...');
+    expect(tooltip.querySelector('.due-soon-tooltip__footer')).toBeTruthy();
+
+    dashboard.showTimelineStatusTooltip(
+      {
+        id: 'immunization-rsv',
+        label: 'RSV',
+        status: 'future',
+        startWeek: 32,
+        endWeek: 36,
+      },
+      { currentTarget: document.createElement('button') } as unknown as Event,
+    );
+    fixture.detectChanges();
+
+    tooltip = fixture.nativeElement.querySelector('#timeline-status-tooltip') as HTMLElement;
+    checklist = tooltip.querySelector(
+      '.due-soon-tooltip__checklist[aria-label="Checklist items"]',
+    ) as HTMLElement;
+    checkbox = checklist.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    notes = tooltip.querySelector(
+      '.timeline-status-tooltip__notes--editable textarea',
+    ) as HTMLTextAreaElement;
+
+    expect(tooltip.querySelector('.timeline-status-tooltip__heading p')?.textContent?.trim()).toBe(
+      'Routine Prenatal Care',
+    );
+    expect(checklist.textContent).toContain('Checklist Items');
+    expect(checklist.textContent).toContain('0 of 1 completed');
+    expect(checklist.textContent).toContain('RSV');
+    expect(checkbox.checked).toBe(false);
+    expect(tooltip.querySelector('.timeline-status-tooltip__orders-section')).toBeNull();
+    expect(notes.closest('label')?.classList).toContain(
+      'timeline-status-tooltip__checklist-notes',
+    );
+    expect(checklist.compareDocumentPosition(notes)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(notes.placeholder).toBe('Add clinical notes about the RSV immunization...');
+    expect(tooltip.querySelector('.due-soon-tooltip__footer')).toBeTruthy();
+
+    checkbox.click();
+    fixture.detectChanges();
+    expect(checklist.textContent).toContain('1 of 1 completed');
+    expect(checklist.querySelector('.due-soon-tooltip__item button')).toBeNull();
   });
 
   it('shows Delivery planning Future checklists in Lab Tests without general fields', () => {

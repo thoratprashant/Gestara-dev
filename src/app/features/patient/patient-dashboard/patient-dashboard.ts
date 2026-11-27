@@ -302,6 +302,7 @@ interface ActiveDueSoonTooltip {
   chipId: string;
   removedTests: TimelineStatusTooltipTest[];
   notes: string;
+  notesPlaceholder?: string;
   ordersDirty: boolean;
   readOnly: boolean;
   scheduledWeekRange: string;
@@ -354,6 +355,17 @@ interface TimelineConditionDetails {
   tags: TimelineConditionTag[];
 }
 
+interface TimelineResolvedTransferRow {
+  originalId: string;
+  originalRow: TimelineRow;
+  transferredId: string;
+}
+
+interface TimelineResolvedTransfer {
+  rows: TimelineResolvedTransferRow[];
+  targetGroupId: string;
+}
+
 interface TimelineGroup {
   condition: TimelineConditionDetails;
   id: string;
@@ -361,6 +373,7 @@ interface TimelineGroup {
   resolutionNotes?: string;
   resolved?: boolean;
   resolvedFromIndex?: number;
+  resolvedTransfer?: TimelineResolvedTransfer;
   rows: TimelineRow[];
 }
 
@@ -908,6 +921,26 @@ const IMMUNIZATION_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
     declined: false,
     id: 'covid',
     label: 'COVID',
+    notes: false,
+  },
+];
+
+const TDAP_IMMUNIZATION_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: false,
+    declined: false,
+    id: 'tdap',
+    label: 'TDaP',
+    notes: false,
+  },
+];
+
+const RSV_IMMUNIZATION_CHECKLIST: readonly TimelineStatusTooltipChecklistItem[] = [
+  {
+    checked: false,
+    declined: false,
+    id: 'rsv',
+    label: 'RSV',
     notes: false,
   },
 ];
@@ -1956,6 +1989,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly timelineProblemPendingRemoval = signal<TimelineGroup | null>(null);
   readonly timelineProblemPendingResolution = signal<TimelineGroup | null>(null);
   readonly timelineProblemResolutionNotes = signal('');
+  readonly timelineProblemTransferTargetId = signal('');
   readonly timelineGroupTooltipPosition = signal<TimelineGroupTooltipPosition>({
     bottom: null,
     left: 0,
@@ -2618,6 +2652,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.timelineProblemPendingRemoval.set(null);
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
+    this.timelineProblemTransferTargetId.set('');
     this.hideVitalTooltip();
     this.hideResultTooltip();
     this.hideRiskAssessment();
@@ -2641,6 +2676,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.timelineProblemPendingRemoval.set(null);
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
+    this.timelineProblemTransferTargetId.set('');
     this.timelineGroupTooltipTrigger = null;
     this.activeTimelineGroupTooltip.set(null);
   }
@@ -3094,6 +3130,15 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       tooltip.resultRows = undefined;
       tooltip.showSubmitFooter = true;
     }
+    if (chip.id === 'immunization-rsv') {
+      tooltip.checklistItems = RSV_IMMUNIZATION_CHECKLIST.map((item) => ({ ...item }));
+      tooltip.notes = undefined;
+      tooltip.notesPlaceholder = 'Add clinical notes about the RSV immunization...';
+      tooltip.otherPlaceholder = undefined;
+      tooltip.showBulkActions = false;
+      tooltip.showSubmitFooter = true;
+      tooltip.tests = undefined;
+    }
     if (
       chip.id === 'delivery-planning-confirm-cephalic' ||
       chip.id === 'delivery-planning-schedule-iol'
@@ -3262,6 +3307,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const savedProgress = this.dueSoonTaskProgress.get(chip.id);
     const isThirdTrimesterCounseling = chip.id === 'counseling-third-trimester';
     const isThirdTrimesterScreening = chip.id === 'behavioral-screening-third-trimester';
+    const isTdapImmunization = chip.id === 'immunization-tdap';
     const isGestationalHypertensionNstBpp = /^gestational-hypertension-nst-bpp-(28|29|30|31)$/.test(
       chip.id,
     );
@@ -3277,13 +3323,18 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     this.timelineStatusTooltipMaxHeight.set(maxHeight);
     this.activeTimelineStatusTooltip.set(null);
     this.activeDueSoonTooltip.set({
-      checklistItems: isThirdTrimesterCounseling
-        ? (savedProgress?.checklistItems ?? THIRD_TRIMESTER_COUNSELING_CHECKLIST).map((item) => ({
-            ...item,
-          }))
-        : undefined,
+      checklistItems: isTdapImmunization
+        ? (savedProgress?.checklistItems ?? TDAP_IMMUNIZATION_CHECKLIST).map((item) => ({ ...item }))
+        : isThirdTrimesterCounseling
+          ? (savedProgress?.checklistItems ?? THIRD_TRIMESTER_COUNSELING_CHECKLIST).map((item) => ({
+              ...item,
+            }))
+          : undefined,
       chipId: chip.id,
       notes: savedProgress?.notes ?? DUE_SOON_DEFAULT_NOTES,
+      notesPlaceholder: isTdapImmunization
+        ? 'Add clinical notes about the TDaP immunization...'
+        : undefined,
       ordersDirty: false,
       readOnly,
       removedTests: savedProgress?.removedTests.map((test) => ({ ...test })) ?? [],
@@ -3298,7 +3349,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         ? 'Gestational Hypertension'
         : 'Routine Prenatal Care',
       tests:
-        isThirdTrimesterCounseling || isThirdTrimesterScreening
+        isTdapImmunization || isThirdTrimesterCounseling || isThirdTrimesterScreening
           ? []
           : (
               savedProgress?.tests ??
@@ -3930,42 +3981,121 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
 
     this.cancelTimelineGroupTooltipHide();
     this.timelineProblemResolutionNotes.set(group.resolutionNotes ?? '');
+    this.timelineProblemTransferTargetId.set('');
     this.timelineProblemPendingResolution.set(group);
-    this.resizeTimelineGroupTooltipForConfirmation(400);
+    this.resizeTimelineGroupTooltipForConfirmation(480);
   }
 
   updateTimelineProblemResolutionNotes(event: Event): void {
     this.timelineProblemResolutionNotes.set((event.target as HTMLTextAreaElement).value);
   }
 
+  timelineProblemTransferTargets(groupId: string): TimelineGroup[] {
+    return this.pregnancyTimeline().groups.filter((group) => group.id !== groupId);
+  }
+
+  updateTimelineProblemTransferTarget(event: Event): void {
+    this.timelineProblemTransferTargetId.set((event.target as HTMLSelectElement).value);
+  }
+
   cancelTimelineProblemResolution(): void {
     this.timelineProblemPendingResolution.set(null);
     this.timelineProblemResolutionNotes.set('');
+    this.timelineProblemTransferTargetId.set('');
     this.resizeTimelineGroupTooltipForConfirmation(360);
   }
 
   confirmTimelineProblemResolution(groupId: string): void {
-    this.rememberTimeline();
-    this.pregnancyTimeline.update((timeline) => {
-      const resolvedFromIndex = timeline.groups.findIndex((group) => group.id === groupId);
-      const groupToResolve = timeline.groups[resolvedFromIndex];
+    const timeline = this.pregnancyTimeline();
+    const groupToResolve = timeline.groups.find((group) => group.id === groupId);
 
-      if (!groupToResolve) {
-        return timeline;
+    if (!groupToResolve) {
+      return;
+    }
+
+    const requestedTargetId = this.timelineProblemTransferTargetId();
+    const transferTarget = timeline.groups.find(
+      (group) => group.id === requestedTargetId && group.id !== groupId,
+    );
+
+    this.rememberTimeline();
+    this.pregnancyTimeline.update((currentTimeline) => {
+      const resolvedFromIndex = currentTimeline.groups.findIndex(
+        (group) => group.id === groupId,
+      );
+      const currentGroupToResolve = currentTimeline.groups[resolvedFromIndex];
+
+      if (!currentGroupToResolve) {
+        return currentTimeline;
       }
 
+      const currentTransferTarget = transferTarget
+        ? currentTimeline.groups.find((group) => group.id === transferTarget.id)
+        : undefined;
+      const usedTargetRowIds = new Set(
+        currentTransferTarget?.rows.map((row) => row.id) ?? [],
+      );
+      const transferredRows = currentGroupToResolve.rows.map((row) => {
+        const transferredIdBase = `${row.id}-transferred-from-${currentGroupToResolve.id}`;
+        let transferredId = row.id;
+        let duplicateIndex = 2;
+
+        while (usedTargetRowIds.has(transferredId)) {
+          transferredId =
+            duplicateIndex === 2
+              ? transferredIdBase
+              : `${transferredIdBase}-${duplicateIndex}`;
+          duplicateIndex += 1;
+        }
+        usedTargetRowIds.add(transferredId);
+
+        return {
+          ...row,
+          id: transferredId,
+          chips: row.chips.map((chip) => ({ ...chip })),
+        };
+      });
+
       const resolvedGroup: TimelineGroup = {
-        ...groupToResolve,
+        ...currentGroupToResolve,
         resolutionNotes: this.timelineProblemResolutionNotes().trim(),
         resolved: true,
         resolvedFromIndex,
+        resolvedTransfer: currentTransferTarget
+          ? {
+              rows: transferredRows.map((row, index) => ({
+                originalId: currentGroupToResolve.rows[index].id,
+                originalRow: {
+                  ...currentGroupToResolve.rows[index],
+                  chips: currentGroupToResolve.rows[index].chips.map((chip) => ({ ...chip })),
+                },
+                transferredId: row.id,
+              })),
+              targetGroupId: currentTransferTarget.id,
+            }
+          : undefined,
+        rows: currentTransferTarget ? [] : currentGroupToResolve.rows,
       };
+      const remainingGroups = currentTimeline.groups
+        .filter((group) => group.id !== groupId)
+        .map((group) =>
+          currentTransferTarget && group.id === currentTransferTarget.id
+            ? { ...group, rows: [...group.rows, ...transferredRows] }
+            : group,
+        );
 
       return {
-        ...timeline,
-        groups: [...timeline.groups.filter((group) => group.id !== groupId), resolvedGroup],
+        ...currentTimeline,
+        groups: [...remainingGroups, resolvedGroup],
       };
     });
+
+    if (transferTarget) {
+      this.expandedTimelineGroupIds.update((expandedIds) =>
+        new Set(expandedIds).add(transferTarget.id),
+      );
+    }
+
     this.hideTimelineGroupTooltip();
   }
 
@@ -3985,10 +4115,42 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         return currentTimeline;
       }
 
-      const { resolvedFromIndex, ...reactivatedGroup } = groupToReactivate;
-      const groupsWithoutReactivatedProblem = currentTimeline.groups.filter(
+      const { resolvedFromIndex, resolvedTransfer, ...reactivatedGroup } = groupToReactivate;
+      let restoredRows = groupToReactivate.rows;
+      let groupsWithoutReactivatedProblem = currentTimeline.groups.filter(
         (item) => item.id !== groupId,
       );
+
+      if (resolvedTransfer) {
+        const transferTarget = groupsWithoutReactivatedProblem.find(
+          (item) => item.id === resolvedTransfer.targetGroupId,
+        );
+        const transferredRowsById = new Map(
+          transferTarget?.rows.map((row) => [row.id, row]) ?? [],
+        );
+        const transferredRowIds = new Set(
+          resolvedTransfer.rows.map((row) => row.transferredId),
+        );
+
+        restoredRows = resolvedTransfer.rows.map((transferRow) => {
+          const row = transferredRowsById.get(transferRow.transferredId) ?? transferRow.originalRow;
+
+          return {
+            ...row,
+            id: transferRow.originalId,
+            chips: row.chips.map((chip) => ({ ...chip })),
+          };
+        });
+        groupsWithoutReactivatedProblem = groupsWithoutReactivatedProblem.map((item) =>
+          item.id === resolvedTransfer.targetGroupId
+            ? {
+                ...item,
+                rows: item.rows.filter((row) => !transferredRowIds.has(row.id)),
+              }
+            : item,
+        );
+      }
+
       const restoredIndex = this.clamp(
         resolvedFromIndex ?? groupsWithoutReactivatedProblem.length,
         0,
@@ -3998,6 +4160,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       groupsWithoutReactivatedProblem.splice(restoredIndex, 0, {
         ...reactivatedGroup,
         resolved: false,
+        rows: restoredRows,
       });
 
       return { ...currentTimeline, groups: groupsWithoutReactivatedProblem };
@@ -5287,6 +5450,18 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
         ...row,
         chips: row.chips.map((chip) => ({ ...chip })),
       })),
+      resolvedTransfer: group.resolvedTransfer
+        ? {
+            ...group.resolvedTransfer,
+            rows: group.resolvedTransfer.rows.map((transferRow) => ({
+              ...transferRow,
+              originalRow: {
+                ...transferRow.originalRow,
+                chips: transferRow.originalRow.chips.map((chip) => ({ ...chip })),
+              },
+            })),
+          }
+        : undefined,
     };
   }
 
@@ -5368,6 +5543,18 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
           ...row,
           chips: row.chips.map((chip) => ({ ...chip })),
         })),
+        resolvedTransfer: group.resolvedTransfer
+          ? {
+              ...group.resolvedTransfer,
+              rows: group.resolvedTransfer.rows.map((transferRow) => ({
+                ...transferRow,
+                originalRow: {
+                  ...transferRow.originalRow,
+                  chips: transferRow.originalRow.chips.map((chip) => ({ ...chip })),
+                },
+              })),
+            }
+          : undefined,
       })),
     };
   }

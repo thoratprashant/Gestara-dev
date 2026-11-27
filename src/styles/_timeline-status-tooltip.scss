@@ -2014,6 +2014,17 @@
   resize: none;
 }
 
+.timeline-status-tooltip__checklist-notes {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--timeline-status-tooltip-border, #e3ded9);
+}
+
+.due-soon-tooltip__checklist .timeline-status-tooltip__checklist-notes {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e3ded9;
+}
+
 .due-soon-tooltip button:hover {
   filter: brightness(0.96);
 }
