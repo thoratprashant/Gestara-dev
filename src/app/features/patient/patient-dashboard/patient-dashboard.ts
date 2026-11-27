@@ -313,9 +313,13 @@ interface ActiveDueSoonTooltip {
   title: string;
 }
 
-interface TimelineStatusTooltipPosition extends VitalTooltipPosition {
+interface TimelineStatusTooltipPosition {
+  bottom: number | null;
+  left: number;
   notchLeft: number;
   placement: 'above' | 'below';
+  top: number | null;
+  width: number;
 }
 
 interface TimelineChip {
@@ -518,7 +522,7 @@ const VITAL_TOOLTIPS: VitalTooltip[] = [
         max: 35,
         yTicks: [15, 20, 25, 30, 35],
         xLabels: ['20w', '24w', '26w', '28w'],
-        normalRange: { min: 18, max: 30, color: 'rgba(16, 185, 129, 0.1)' },
+        normalRange: { min: 26, max: 30, color: 'rgba(16, 185, 129, 0.1)' },
         unit: 'cm',
         series: [{ values: [20, 24, 26, 29], color: '#f59e0b' }],
       },
@@ -1625,20 +1629,6 @@ const INITIAL_TIMELINE: PregnancyTimeline = {
           label: 'Ultrasounds',
           chips: [
             {
-              id: 'advanced-maternal-age-level-ii-ultrasound',
-              label: 'Level II ultrasound',
-              status: 'completed',
-              startWeek: 18,
-              endWeek: 22,
-            },
-            {
-              id: 'advanced-maternal-age-growth-ultrasound-27',
-              label: 'Growth Ultrasound',
-              status: 'not-reviewed',
-              startWeek: 27,
-              endWeek: 29,
-            },
-            {
               id: 'advanced-maternal-age-growth-ultrasound-32',
               label: 'Growth Ultrasound',
               status: 'future',
@@ -1980,7 +1970,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       modeOfDelivery: 'In progress',
       newborns: [{ birthWeight: '—', sex: '—' }],
       deliveryLocation: '—',
-      complications: 'Gestational Diabetes Mellitus, Gestational Hypertension',
+      complications: 'Gestational Hypertension',
       living: 'N/A',
     },
   ];
@@ -2001,6 +1991,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly activeTimelineStatusTooltip = signal<ActiveTimelineStatusTooltip | null>(null);
   readonly activeDueSoonTooltip = signal<ActiveDueSoonTooltip | null>(null);
   readonly timelineStatusTooltipPosition = signal<TimelineStatusTooltipPosition>({
+    bottom: null,
     left: 0,
     notchLeft: 160,
     placement: 'below',
@@ -2010,6 +2001,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
   readonly timelineStatusTooltipMaxHeight = signal(560);
   readonly deliveryChipTooltipOpen = signal(false);
   readonly deliveryChipTooltipPosition = signal<TimelineStatusTooltipPosition>({
+    bottom: null,
     left: 0,
     notchLeft: 150,
     placement: 'below',
@@ -3218,8 +3210,16 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const isAdvancedMaternalAgeNstBpp = /^advanced-maternal-age-nst-bpp-(36|37|38|39)$/.test(
       chip.id,
     );
+    const isAdvancedMaternalAgeGrowthUltrasound =
+      /^advanced-maternal-age-growth-ultrasound-(32|35)$/.test(chip.id);
     const isGestationalHypertensionFutureNstBpp =
       /^gestational-hypertension-nst-bpp-(32|33|34|35|36|37)$/.test(chip.id);
+
+    if (isAdvancedMaternalAgeGrowthUltrasound) {
+      tooltip.subtitle = 'Advanced Maternal Age';
+      tooltip.tests = [{ label: 'Growth Ultrasound', showActions: true }];
+      tooltip.showSubmitFooter = true;
+    }
 
     if (isAdvancedMaternalAgeNstBpp || isGestationalHypertensionFutureNstBpp) {
       tooltip.subtitle = isAdvancedMaternalAgeNstBpp
@@ -3265,12 +3265,11 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       12,
       Math.max(12, window.innerWidth - width - 12),
     );
-    const top =
-      placement === 'below'
-        ? triggerBounds.bottom + 10
-        : Math.max(12, triggerBounds.top - maxHeight - 10);
+    const top = placement === 'below' ? triggerBounds.bottom + 10 : null;
+    const bottom = placement === 'above' ? window.innerHeight - triggerBounds.top + 10 : null;
 
     this.timelineStatusTooltipPosition.set({
+      bottom,
       left,
       notchLeft: this.clamp(triggerBounds.left + triggerBounds.width / 2 - left, 18, width - 18),
       placement,
@@ -3300,10 +3299,8 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       12,
       Math.max(12, window.innerWidth - width - 12),
     );
-    const top =
-      placement === 'below'
-        ? triggerBounds.bottom + 10
-        : Math.max(12, triggerBounds.top - maxHeight - 10);
+    const top = placement === 'below' ? triggerBounds.bottom + 10 : null;
+    const bottom = placement === 'above' ? window.innerHeight - triggerBounds.top + 10 : null;
     const savedProgress = this.dueSoonTaskProgress.get(chip.id);
     const isThirdTrimesterCounseling = chip.id === 'counseling-third-trimester';
     const isThirdTrimesterScreening = chip.id === 'behavioral-screening-third-trimester';
@@ -3314,6 +3311,7 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
     const usesShortNstBppOrders = /^gestational-hypertension-nst-bpp-(29|30|31)$/.test(chip.id);
 
     this.timelineStatusTooltipPosition.set({
+      bottom,
       left,
       notchLeft: this.clamp(triggerBounds.left + triggerBounds.width / 2 - left, 18, width - 18),
       placement,
@@ -3402,12 +3400,11 @@ export class PatientDashboard implements AfterViewInit, OnDestroy {
       12,
       Math.max(12, window.innerWidth - width - 12),
     );
-    const top =
-      placement === 'below'
-        ? triggerBounds.bottom + 10
-        : Math.max(12, triggerBounds.top - maxHeight - 10);
+    const top = placement === 'below' ? triggerBounds.bottom + 10 : null;
+    const bottom = placement === 'above' ? window.innerHeight - triggerBounds.top + 10 : null;
 
     this.deliveryChipTooltipPosition.set({
+      bottom,
       left,
       notchLeft: this.clamp(triggerBounds.left + triggerBounds.width / 2 - left, 18, width - 18),
       placement,

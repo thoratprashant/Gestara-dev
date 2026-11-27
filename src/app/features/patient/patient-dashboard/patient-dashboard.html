@@ -43,7 +43,7 @@
         <div class="patient-identity">
           <h1 id="patient-name">Sara Johnson</h1>
           <p>
-            <span class="patient-identity__history">DOB: February 16, 1990</span>
+            <span class="patient-identity__history">DOB: 2/16/1990</span>
             <span class="patient-identity__separator" aria-hidden="true">/</span>
             <span class="patient-identity__history">MRN: 829653892</span>
           </p>
@@ -1873,6 +1873,7 @@
         role="dialog"
         aria-label="Suggested Delivery Window"
         [attr.data-placement]="deliveryChipTooltipPosition().placement"
+        [style.bottom.px]="deliveryChipTooltipPosition().bottom"
         [style.left.px]="deliveryChipTooltipPosition().left"
         [style.top.px]="deliveryChipTooltipPosition().top"
         [style.width.px]="deliveryChipTooltipPosition().width"
@@ -1955,6 +1956,7 @@
         [attr.aria-readonly]="dueSoonTooltip.readOnly"
         [attr.aria-label]="dueSoonTooltip.title + ' task details'"
         [attr.data-placement]="timelineStatusTooltipPosition().placement"
+        [style.bottom.px]="timelineStatusTooltipPosition().bottom"
         [style.left.px]="timelineStatusTooltipPosition().left"
         [style.top.px]="timelineStatusTooltipPosition().top"
         [style.width.px]="timelineStatusTooltipPosition().width"
@@ -2161,7 +2163,7 @@
                   <div class="timeline-status-tooltip__order-bulk-actions">
                     <button type="button" (click)="orderAllDueSoonLabTests()">Order All</button>
                     <button type="button" (click)="declineAllDueSoonLabTests()">
-                      Declined All
+                      Decline All
                     </button>
                   </div>
                 }
@@ -2338,6 +2340,7 @@
         "
         [attr.data-placement]="timelineStatusTooltipPosition().placement"
         [attr.data-status]="activeStatusTooltip.tooltip.status"
+        [style.bottom.px]="timelineStatusTooltipPosition().bottom"
         [style.left.px]="timelineStatusTooltipPosition().left"
         [style.top.px]="timelineStatusTooltipPosition().top"
         [style.width.px]="timelineStatusTooltipPosition().width"
@@ -2703,7 +2706,7 @@
                       Order All
                     </button>
                     <button type="button" (click)="declineAllTimelineTooltipTests()">
-                      Declined All
+                      Decline All
                     </button>
                   </div>
                 }
@@ -3114,7 +3117,7 @@
                       Order All
                     </button>
                     <button type="button" (click)="declineAllTimelineTooltipTests(true)">
-                      Declined All
+                      Decline All
                     </button>
                   </div>
                 }

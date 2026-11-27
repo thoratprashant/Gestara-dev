@@ -2480,13 +2480,51 @@ describe('PatientDashboard timeline', () => {
       {
         label: 'Ultrasounds',
         chips: [
-          { label: 'Level II ultrasound', startWeek: 18, endWeek: 22, status: 'completed' },
-          { label: 'Growth Ultrasound', startWeek: 27, endWeek: 29, status: 'not-reviewed' },
           { label: 'Growth Ultrasound', startWeek: 32, endWeek: 33, status: 'future' },
           { label: 'Growth Ultrasound', startWeek: 35, endWeek: 37, status: 'future' },
         ],
       },
     ]);
+  });
+
+  it('shows one Growth Ultrasound order for each future Advanced Maternal Age ultrasound', () => {
+    const fixture = TestBed.createComponent(PatientDashboard);
+    const dashboard = fixture.componentInstance;
+    fixture.detectChanges();
+
+    for (const [id, startWeek, endWeek] of [
+      ['advanced-maternal-age-growth-ultrasound-32', 32, 33],
+      ['advanced-maternal-age-growth-ultrasound-35', 35, 37],
+    ] as const) {
+      dashboard.showTimelineStatusTooltip(
+        {
+          id,
+          label: 'Growth Ultrasound',
+          status: 'future',
+          startWeek,
+          endWeek,
+        },
+        { currentTarget: document.createElement('button') } as unknown as Event,
+      );
+      fixture.detectChanges();
+
+      const active = dashboard.activeTimelineStatusTooltip();
+      const tooltip = fixture.nativeElement.querySelector(
+        '#timeline-status-tooltip',
+      ) as HTMLElement;
+      const orders = Array.from(
+        tooltip.querySelectorAll('.timeline-status-tooltip__test-name'),
+        (order: unknown) => (order as HTMLElement).textContent?.trim(),
+      );
+
+      expect(active?.tooltip.title).toBe('Growth Ultrasound');
+      expect(active?.tooltip.subtitle).toBe('Advanced Maternal Age');
+      expect(active?.tooltip.status).toBe('future');
+      expect(active?.tooltip.schedule[0].value).toBe(`Week ${startWeek}-${endWeek}`);
+      expect(orders).toEqual(['Growth Ultrasound']);
+      expect(tooltip.querySelectorAll('.timeline-status-tooltip__order')).toHaveLength(1);
+      expect(tooltip.querySelectorAll('.timeline-status-tooltip__decline')).toHaveLength(1);
+    }
   });
 
   it('assigns weekly NST/BPP tasks to Advanced Maternal Age antenatal surveillance', () => {
@@ -2621,7 +2659,7 @@ describe('PatientDashboard timeline', () => {
     ) as HTMLElement;
     expect(
       Array.from(bulkActions.querySelectorAll('button'), (button) => button.textContent?.trim()),
-    ).toEqual(['Order All', 'Declined All']);
+    ).toEqual(['Order All', 'Decline All']);
     expect(tooltip.querySelector('.due-soon-tooltip__footer')).toBeNull();
 
     (tooltip.querySelector('.timeline-status-tooltip__order') as HTMLButtonElement).click();
@@ -2694,7 +2732,7 @@ describe('PatientDashboard timeline', () => {
         dueSoonTooltip.querySelectorAll('.timeline-status-tooltip__order-bulk-actions button'),
         (button) => button.textContent?.trim(),
       ),
-    ).toEqual(['Order All', 'Declined All']);
+    ).toEqual(['Order All', 'Decline All']);
     const submitButton = dueSoonTooltip.querySelector(
       '.due-soon-tooltip__footer button',
     ) as HTMLButtonElement;
